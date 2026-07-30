@@ -48,21 +48,30 @@ def wmmse_precoder(h_freq, no, stream_management, num_iterations=10):
     """
     WMMSE itératif — initialisé depuis RZF, α = no (optimal i.i.d.).
     Sortie : [B, 1, ofdm, fft, M, K]
+
+    A_reg devient sévèrement mal conditionnée à haut SNR (no -> 0 alors que
+    les poids W peuvent atteindre ~1e4), ce que complex64/float32 ne peut
+    résoudre avec précision (cond(A_reg) observé jusqu'à ~1e11). La boucle
+    est donc exécutée en complex128/float64 ; seule l'entrée/sortie reste
+    complex64 pour ne pas changer l'interface externe.
     """
+    input_dtype = h_freq.dtype
     h_pc = _get_desired_channels(h_freq, stream_management)
-    H    = tf.squeeze(h_pc, axis=1)   # [B, ofdm, fft, K, M]
+    H    = tf.cast(tf.squeeze(h_pc, axis=1), tf.complex128)   # [B, ofdm, fft, K, M]
 
     s       = tf.shape(H)
     K       = s[3]; M = s[4]
-    K_float = tf.cast(K, H.dtype.real_dtype)
+    K_float = tf.cast(K, tf.float64)
 
-    no_scalar  = tf.cast(tf.reshape(no, []), tf.float32)
+    no_scalar  = tf.cast(tf.reshape(no, []), tf.float64)
     no_complex = tf.cast(no_scalar, H.dtype)
     no_val     = tf.reshape(no_scalar,  [1, 1, 1, 1])
     no_mat     = tf.reshape(no_complex, [1, 1, 1, 1, 1])
     eye_M      = tf.eye(M, dtype=H.dtype)
 
-    V = tf.squeeze(rzf_precoding_matrix(h_pc, alpha=no_scalar), axis=1)
+    V = tf.cast(tf.squeeze(
+        rzf_precoding_matrix(h_pc, alpha=tf.cast(no_scalar, tf.float32)), axis=1),
+        tf.complex128)
 
     for _ in range(num_iterations):
         HV      = tf.matmul(H, V)
@@ -86,6 +95,7 @@ def wmmse_precoder(h_freq, no, stream_management, num_iterations=10):
         pwr = tf.reduce_sum(tf.abs(V)**2, axis=[-2, -1], keepdims=True)
         V   = V * tf.cast(tf.sqrt(K_float / (pwr + 1e-12)), V.dtype)
 
+    V = tf.cast(V, input_dtype)
     return tf.expand_dims(V, axis=1)   # [B, 1, ofdm, fft, M, K]
 
 
