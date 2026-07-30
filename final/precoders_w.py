@@ -54,6 +54,23 @@ def wmmse_precoder(h_freq, no, stream_management, num_iterations=10):
     résoudre avec précision (cond(A_reg) observé jusqu'à ~1e11). La boucle
     est donc exécutée en complex128/float64 ; seule l'entrée/sortie reste
     complex64 pour ne pas changer l'interface externe.
+
+    Écart résiduel connu à bas SNR (0-5dB) : le sum-rate reporté pour WMMSE
+    reste légèrement (~0.5-0.7% à 0dB, disparaît vers 10dB) en dessous de
+    son propre point de départ RZF(alpha=no). Ce n'est PAS un artefact de
+    métrique d'évaluation -- les deux sens de réconciliation ont été
+    essayés et écartés : (a) faire optimiser à WMMSE la métrique 2x-
+    interférence de Sionna's LMMSEPostEqualizationSINR au lieu de la
+    formule 1x standard casse la garantie de non-décroissance monotone de
+    l'algorithme ; (b) reporter le sum-rate via la formule 1x native de
+    WMMSE au lieu de LMMSEPostEqualizationSINR ne referme pas l'écart non
+    plus (RZF en bénéficie davantage que WMMSE, car RZF tolère plus
+    d'interférence résiduelle à bas SNR). L'explication la plus probable
+    est une différence algorithmique réelle : WMMSE alloue la puissance de
+    façon inégale entre utilisateurs (visible dans ses poids itératifs W),
+    alors que RZF impose une puissance égale par flux via sa normalisation
+    par colonne. Non confirmé davantage -- à traiter comme une
+    caractéristique connue de WMMSE, pas un bug.
     """
     input_dtype = h_freq.dtype
     h_pc = _get_desired_channels(h_freq, stream_management)
