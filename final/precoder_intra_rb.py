@@ -120,7 +120,7 @@ class IntraRBTransformerPrecoder(Model):
         num_tx    M=8   antennes BS
         num_rx    K=4   users (single-antenna)
         num_ofdm  14    symboles OFDM par slot
-        fft_size  72    taille FFT totale
+        fft_size  96    taille FFT totale
         rb_size   12    SCs par RB (fixe 5G NR)
         pilot_idx 2     indice symbole pilote utilisé (pas de moyenne)
         embed_dim 128   dimension d'embedding D
@@ -135,7 +135,7 @@ class IntraRBTransformerPrecoder(Model):
         num_tx: int   = 8,
         num_rx: int   = 4,
         num_ofdm: int = 14,
-        fft_size: int = 72,
+        fft_size: int = 96,
         rb_size: int  = 12,
         pilot_idx: int = 2,      # symbole OFDM pilote — pas de moyenne
         embed_dim: int = 128,
@@ -156,7 +156,7 @@ class IntraRBTransformerPrecoder(Model):
         self.num_ofdm   = num_ofdm
         self.fft_size   = fft_size
         self.rb_size    = rb_size        # S = 12
-        self.N_RB       = fft_size // rb_size   # 6 pour 72 SCs
+        self.N_RB       = fft_size // rb_size   # 8 pour 96 SCs
         self.pilot_idx  = pilot_idx
         self.D          = embed_dim
         self.snr_aware  = snr_aware

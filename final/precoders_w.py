@@ -348,7 +348,7 @@ class TransformerPrecoderV4(Model):
         'v4.3': (True,  'rich_snr'),
     }
 
-    def __init__(self, num_tx=8, num_rx=4, num_ofdm=14, fft_size=72,
+    def __init__(self, num_tx=8, num_rx=4, num_ofdm=14, fft_size=96,
                  rb_size=12, tokens_per_rb=1,
                  embed_dim=128, num_heads=4, num_layers=4,
                  dropout=0.0, version='v4.2', **kwargs):
@@ -401,39 +401,56 @@ class TransformerPrecoderV4(Model):
         ]
 
         # ── Joint output projection ───────────────────────────────────────
-        self.joint_output_proj = layers.Dense(num_rx * num_tx * 2,
+        # Stays in embedding space (D->D), per (token, user) -- cross-user
+        # coupling is already provided by the attention blocks' user-
+        # attention sub-layer, so this does NOT need to flatten K users
+        # into one M*K*2-wide joint dense (that was the O((M*K)^2) blow-up
+        # at K=36). See channel_config.py / conversation history for why
+        # this was redesigned.
+        self.joint_output_proj = layers.Dense(embed_dim,
                                                name='joint_output_proj')
 
         # ── Upsampling ────────────────────────────────────────────────────
+        # Operates per-user (batch dim folded to Bo*K), D channels wide --
+        # NOT sc_out=M*K*2 wide as before.
         if self.use_learned_upsample:
             self.upsample = layers.Conv1DTranspose(
-                filters=sc_out,
+                filters=embed_dim,
                 kernel_size=self.sc_per_token,
                 strides=self.sc_per_token,
                 padding='valid', activation=None,
                 name='upsample_learned')
 
+        # ── Final per-antenna projection (D -> 2*M), applied at the very
+        # end, per (SC, user) -- this is the only M-scaling dense left, and
+        # it scales linearly with M (like IntraRB's output_proj), not with
+        # M*K. ─────────────────────────────────────────────────────────────
+        self.final_proj = layers.Dense(2 * num_tx, name='final_proj')
+
         # ── SC refinement ─────────────────────────────────────────────────
+        # Per-user (Bo*K batch), raw channel features are M-wide (this
+        # user's own antennas), not M*K-wide -- refine hidden width scales
+        # with embed_dim, not with M*K.
         sc_in_map = {
-            'basic'   : num_tx * num_rx * 4,   # v4.0
-            'minimal' : num_tx * num_rx * 2,   # v4.1
-            'rich'    : num_tx * num_rx * 6,   # v4.2
-            'rich_snr': num_tx * num_rx * 6,   # v4.3 — même input que v4.2
+            'basic'   : embed_dim + num_tx * 2,   # v4.0: w_up(D) + h_re,h_im(2M)
+            'minimal' : embed_dim,                 # v4.1: w_up(D) only
+            'rich'    : embed_dim + num_tx * 4,    # v4.2: w_up(D) + h_re,h_im,h_abs,h_phase(4M)
+            'rich_snr': embed_dim + num_tx * 4,    # v4.3 — même input que v4.2
         }
         sc_in    = sc_in_map[self.refine_mode]
         k_refine = rb_size if self.use_learned_upsample else 3
-        hidden   = sc_out * 2
+        hidden   = 2 * embed_dim
 
         self.sc_refine = tf.keras.Sequential([
             layers.Conv1D(hidden, kernel_size=k_refine,
                           padding='same', activation='gelu', name='sc_r1'),
-            layers.Conv1D(sc_out, kernel_size=1,
+            layers.Conv1D(2 * num_tx, kernel_size=1,
                           padding='same', name='sc_r2'),
         ], name='sc_refine')
 
         # ── Gate sigmoid sur le delta (v4.3 seulement) ───────────────────
         if self.snr_aware:
-            self.sc_gate = layers.Conv1D(sc_out, kernel_size=1,
+            self.sc_gate = layers.Conv1D(2 * num_tx, kernel_size=1,
                                           padding='same', activation='sigmoid',
                                           name='sc_gate')
 
@@ -586,51 +603,64 @@ class TransformerPrecoderV4(Model):
         # ── Transformer ───────────────────────────────────────────────────
         for blk in self.blocks:
             x = blk(x, training=training)
+        # x : [Bo, T, K, D]
 
-        # ── Joint output → [Bo, T, tx*rx*2] ──────────────────────────────
-        w_tok = self.joint_output_proj(
-            tf.reshape(x, [Bo, self.total_tokens, self.num_rx * self.embed_dim]))
+        # ── Joint output, stays D-wide (embedding space) ──────────────────
+        x = self.joint_output_proj(x)   # [Bo, T, K, D]
 
-        # ── Upsampling → [Bo, fft, tx*rx*2] ──────────────────────────────
+        # ── Fold user axis into batch: per-user token sequences ──────────
+        # [Bo, T, K, D] -> [Bo, K, T, D] -> [Bo*K, T, D]
+        x_user = tf.reshape(tf.transpose(x, [0, 2, 1, 3]),
+                             [Bo * self.num_rx, self.total_tokens, self.embed_dim])
+
+        # ── Upsampling (per user, D channels) → [Bo*K, fft, D] ───────────
         if self.use_learned_upsample:
-            w_up = self.upsample(w_tok)
+            w_up = self.upsample(x_user)
         else:
-            w_up = tf.repeat(w_tok, self.sc_per_token, axis=1)
+            w_up = tf.repeat(x_user, self.sc_per_token, axis=1)
 
-        # ── SC refinement ─────────────────────────────────────────────────
-        h_full = tf.transpose(h_sq, [0, 3, 4, 1, 2])  # [B, ofdm, fft, rx, tx]
+        # ── Final per-antenna projection, D -> 2M (per user) ─────────────
+        w_up_final = self.final_proj(w_up)   # [Bo*K, fft, 2M]
+
+        # ── SC refinement (per user, raw channel features are M-wide) ────
+        # h_sq : [B, rx, tx, ofdm, fft] -> per-user [Bo*K, fft, tx]
+        h_bo   = tf.reshape(tf.transpose(h_sq, [0, 3, 4, 1, 2]),
+                             [Bo, self.fft_size, self.num_rx, self.num_tx])
+        h_user = tf.reshape(tf.transpose(h_bo, [0, 2, 1, 3]),
+                             [Bo * self.num_rx, self.fft_size, self.num_tx])
 
         if self.refine_mode == 'minimal':
             refine_input = w_up
 
         elif self.refine_mode == 'basic':
-            h_ri = tf.reshape(
-                tf.concat([tf.math.real(h_full), tf.math.imag(h_full)], axis=-1),
-                [Bo, self.fft_size, self.num_tx * self.num_rx * 2])
+            h_ri = tf.concat([tf.math.real(h_user), tf.math.imag(h_user)], axis=-1)
             refine_input = tf.concat([w_up, h_ri], axis=-1)
 
         else:  # 'rich' ou 'rich_snr'
-            h_re    = tf.reshape(tf.math.real(h_full),
-                [Bo, self.fft_size, self.num_tx * self.num_rx])
-            h_im    = tf.reshape(tf.math.imag(h_full),
-                [Bo, self.fft_size, self.num_tx * self.num_rx])
-            h_abs   = tf.reshape(tf.abs(h_full),
-                [Bo, self.fft_size, self.num_tx * self.num_rx])
-            h_phase = tf.reshape(tf.math.angle(h_full),
-                [Bo, self.fft_size, self.num_tx * self.num_rx])
+            h_re    = tf.math.real(h_user)
+            h_im    = tf.math.imag(h_user)
+            h_abs   = tf.abs(h_user)
+            h_phase = tf.math.angle(h_user)
             refine_input = tf.concat([w_up, h_re, h_im, h_abs, h_phase], axis=-1)
 
-        delta = self.sc_refine(refine_input, training=training)
+        delta = self.sc_refine(refine_input, training=training)   # [Bo*K, fft, 2M]
 
         # Gate sigmoid (v4.3) — contrôle où appliquer la correction
         if self.snr_aware:
-            gate         = self.sc_gate(w_up)
-            w_final_flat = w_up + self.alpha * gate * delta
+            gate         = self.sc_gate(w_up_final)
+            w_final_flat = w_up_final + self.alpha * gate * delta
         else:
-            w_final_flat = w_up + self.alpha * delta
+            w_final_flat = w_up_final + self.alpha * delta
+        # w_final_flat : [Bo*K, fft, 2M]
 
-        # ── Reshape + power norm ──────────────────────────────────────────
+        # ── Unfold user axis, reshape + power norm ────────────────────────
+        # [Bo*K, fft, 2M] -> [Bo, K, fft, M, 2] -> [Bo, fft, K, M, 2]
+        #                  -> [B, ofdm, fft, M, K, 2]  (M before K, matching
+        #                     RZFPrecodedChannel's expected output layout)
         w_final = tf.reshape(w_final_flat,
+            [Bo, self.num_rx, self.fft_size, self.num_tx, 2])
+        w_final = tf.transpose(w_final, [0, 2, 3, 1, 4])
+        w_final = tf.reshape(w_final,
             [B, self.num_ofdm, self.fft_size, self.num_tx, self.num_rx, 2])
         w_re = w_final[..., 0]
         w_im = w_final[..., 1]
@@ -669,7 +699,7 @@ class TransformerPrecoderV5(Model):
 
     RB_SIZE = 12   # Standard 5G NR — fixe
 
-    def __init__(self, num_tx=8, num_rx=4, num_ofdm=14, fft_size=72,
+    def __init__(self, num_tx=8, num_rx=4, num_ofdm=14, fft_size=96,
                  embed_dim=128, num_heads=4,
                  num_intra_layers=2, num_inter_layers=2,
                  dropout=0.0, use_swin_shift=False,

@@ -40,8 +40,16 @@ from precoders_w import rzf_precoder, wmmse_precoder, TransformerPrecoderV4, Tra
 # =============================================================================
 
 SEED         = 42
-NUM_TX       = 64
-NUM_RX       = 4
+
+# Locked Stage 3/4 channel config -- see channel_config.py for the full
+# validation trail (mechanism: forced LOS + 15deg azimuth window + 50%
+# loading ratio, validated consistent from standard to massive-MIMO scale).
+# Switch CHOSEN_CONFIG to retarget training between the two locked scales --
+# this is the one place to change it.
+from channel_config import STANDARD_CONFIG, MASSIVE_CONFIG, FFT_SIZE
+CHOSEN_CONFIG = STANDARD_CONFIG   # or MASSIVE_CONFIG
+NUM_TX       = CHOSEN_CONFIG['NUM_TX']
+NUM_RX       = CHOSEN_CONFIG['NUM_RX']
 BATCH_SIZE   = 128
 DATASET_SIZE = 5000
 
@@ -200,7 +208,7 @@ class MU_MIMO_System(tf.keras.Model):
 
         # Resource grid
         self.rg = ResourceGrid(
-            num_ofdm_symbols=14, fft_size=72, subcarrier_spacing=30e3,
+            num_ofdm_symbols=14, fft_size=FFT_SIZE, subcarrier_spacing=30e3,
             num_tx=1, num_streams_per_tx=num_rx, cyclic_prefix_length=6,
             pilot_pattern='kronecker', pilot_ofdm_symbol_indices=[2, 11])
 
@@ -300,8 +308,20 @@ class MU_MIMO_System(tf.keras.Model):
 
     # ── Topologie ─────────────────────────────────────────────────────────────
     def new_topology(self, batch_size):
-        topology = gen_topology(batch_size, self.num_users, 'umi')
-        self.channel_model.set_topology(*topology)
+        # Locked channel config (narrow azimuth window + forced LOS) -- see
+        # channel_config.py for why. Falls back to plain 3GPP topology if
+        # channel_config isn't importable, so this class stays usable
+        # standalone at other M/K.
+        try:
+            from channel_config import set_locked_topology
+        except ImportError:
+            topology = gen_topology(batch_size, self.num_users, 'umi')
+            self.channel_model.set_topology(*topology)
+            return
+        set_locked_topology(self.channel_model, batch_size, self.num_users,
+                             CHOSEN_CONFIG['HALF_ANGLE_DEG'],
+                             CHOSEN_CONFIG['FORCE_LOS'],
+                             CHOSEN_CONFIG['INDOOR_PROBABILITY'])
 
     # ── Forward pass complet (génération online) ──────────────────────────────
     @tf.function

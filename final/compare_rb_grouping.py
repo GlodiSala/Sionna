@@ -41,12 +41,12 @@ from sionna.phy.mapping import Mapper, Demapper, BinarySource
 SEED        = 42
 NUM_TX      = 8
 NUM_RX      = 4
-FFT_SIZE    = 72
+FFT_SIZE    = 96   # 8 RBs x 12 SC (was 72 = 6 RBs x 12 SC)
 NUM_OFDM    = 14
 BATCH_SIZE  = 256
 NUM_BATCHES = 30
 SNR_RANGE   = np.arange(0, 26, 5)
-RB_SIZES    = [2, 4, 6, 12, 24, 72]
+RB_SIZES    = [2, 4, 6, 12, 24, 96]   # 96 = full FFT_SIZE (no grouping); all divide 96
 
 WEIGHTS_PATH = ('/export/tmp/sala/test_projet/Trans/freq/Sionna/training_weights_transformer_rb/best_20260316_163253/weights.pkl')
 
@@ -123,7 +123,7 @@ def get_complexity(name, transformer=None):
     """Interface unifiée — retourne (FLOPs, Weights, Activations)."""
     M, K = NUM_TX, NUM_RX
 
-    if name == 'RZF Full (72 SC)':
+    if name == 'RZF Full (96 SC)':
         return compute_rzf_flops(M, K, FFT_SIZE, NUM_OFDM)
 
     if name.startswith('RZF RB='):
@@ -500,7 +500,7 @@ def plot_results(all_results, complexity_map, save_dir='./results'):
 
 def print_summary(all_results, complexity_map):
     idx      = list(SNR_RANGE).index(15)
-    rzf_rate = all_results.get('RZF Full (72 SC)', {}).get(
+    rzf_rate = all_results.get('RZF Full (96 SC)', {}).get(
         'rate', [0]*len(SNR_RANGE))[idx]
 
     # ── Performance ──────────────────────────────────────────────────
@@ -636,7 +636,7 @@ def main():
 
     for rb_size in RB_SIZES:
         if rb_size >= FFT_SIZE:
-            name        = 'RZF Full (72 SC)'
+            name        = 'RZF Full (96 SC)'
             precoder_fn = partial(rzf_precoder,
                                   stream_management=system.sm, alpha=0.1)
         else:

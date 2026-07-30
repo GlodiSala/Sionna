@@ -27,7 +27,7 @@ from sionna.phy.channel.tr38901 import AntennaArray, UMi
 # =============================================================================
 
 class SionnaSingleUserGenerator:
-    def __init__(self, num_tx_ant=8, carrier_freq=2.6e9, fft_size=72,
+    def __init__(self, num_tx_ant=8, carrier_freq=2.6e9, fft_size=96,
                  num_ofdm_symbols=14, subcarrier_spacing=30e3,
                  scenario="umi", seed=42):
         self.num_tx_ant        = num_tx_ant
@@ -119,14 +119,29 @@ class SionnaSingleUserGenerator:
                 current_batch_size = min(batch_size,
                                         num_samples - i * batch_size)
 
-                topology = gen_single_sector_topology(
-                    batch_size=current_batch_size,
-                    num_ut=1,
-                    scenario=self.scenario,
-                    min_ut_velocity=0.0,
-                    max_ut_velocity=0.0)
-
-                self.channel_model.set_topology(*topology)
+                # Locked M64K36_ang15_los config (narrow azimuth window +
+                # forced LOS + indoor_probability=0) -- see channel_config.py
+                # for the validation trail. Each single-user draw here gets
+                # placed inside the same window/LOS state; the SAGE-HB
+                # augmentation step (SAGEHBDataset) later combines random
+                # subsets of these into multi-user samples, which correctly
+                # reproduces "K users randomly placed within the window,
+                # forced LOS" as long as each constituent draw already is.
+                # Falls back to plain 3GPP topology if channel_config isn't
+                # importable, so this generator stays usable standalone.
+                try:
+                    from channel_config import set_locked_topology
+                    set_locked_topology(self.channel_model,
+                                         current_batch_size, num_ut=1,
+                                         scenario=self.scenario)
+                except ImportError:
+                    topology = gen_single_sector_topology(
+                        batch_size=current_batch_size,
+                        num_ut=1,
+                        scenario=self.scenario,
+                        min_ut_velocity=0.0,
+                        max_ut_velocity=0.0)
+                    self.channel_model.set_topology(*topology)
 
                 cir = self.channel_model(
                     current_batch_size,
