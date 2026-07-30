@@ -1,0 +1,10 @@
+weights/
+logs/
+*.npz
+__pycache__/
+*.pyc
+results/*.png
+results/*.npy
+**/weights/
+**/logs/
+**/*.npz

@@ -1,0 +1,7 @@
+Method,N_tokens,FLOPs (M),GFLOPs,Params (K),Energy (µJ),vs ZF  FLOPs,vs RZF FLOPs,vs ZF  Energy
+ZF  (per-SC × slot),72,2.107,0.0021,0.0,0.0083,1.0×,1.0×,1.0×
+RZF (per-SC × slot),72,2.111,0.0021,0.0,0.0083,1.0×,1.0×,1.0×
+Transformer Full-SC (N=72),72,9165.865,9.1659,1065.6,17.9164,0.0×,0.0×,0.0×
+TransformerV3  1 tok/RB  (N=6),6,756.941,0.7569,1086.5,1.5322,0.0×,0.0×,0.01×
+TransformerV3  2 tok/RB  (N=12),12,1497.367,1.4974,1086.5,2.979,0.0×,0.0×,0.0×
+TransformerV3  3 tok/RB  (N=18),18,2246.05,2.246,1086.5,4.4416,0.0×,0.0×,0.0×

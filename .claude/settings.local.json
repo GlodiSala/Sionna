@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs -I{} ls -la {})",
+      "Bash(sort -k6,7)"
+    ]
+  }
+}

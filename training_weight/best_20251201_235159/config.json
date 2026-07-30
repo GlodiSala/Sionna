@@ -1,0 +1,13 @@
+{
+  "phase1_snr": 30.0,
+  "phase2_snr": 15.0,
+  "phase1_epochs": 120,
+  "total_epochs": 200,
+  "learning_rate": 0.001,
+  "batch_size": 512,
+  "num_iters": 10,
+  "gmi_weight": 1.0,
+  "fairness_weight": 0,
+  "timestamp": "20251201_235103",
+  "epoch": 1
+}

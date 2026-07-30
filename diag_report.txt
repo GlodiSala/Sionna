@@ -1,0 +1,24 @@
+
+
+=================================================================
+RAPPORT CONSOLIDÉ
+=================================================================
+Réf: WMMSE corr=0.3809 | RZF corr=0.3737
+
+Modèle                  Corr↓   →WMMSE↑    →RZF↑  Diagnostic
+-----------------------------------------------------------------
+V4.2_1tok              0.3628    0.9696   0.9699  ✅ Bonne direction WMMSE — gap résiduel = puissance/amplitude
+V4.2_2tok              0.3742    0.9914   0.9915  ✅ Bonne direction WMMSE — gap résiduel = puissance/amplitude
+V4.2_3tok              0.3775    0.9973   0.9973  ✅ Bonne direction WMMSE — gap résiduel = puissance/amplitude
+V4.2_4tok              0.3777    0.9985   0.9985  ✅ Bonne direction WMMSE — gap résiduel = puissance/amplitude
+V4.2_6tok              0.3786    0.9992   0.9992  ✅ Bonne direction WMMSE — gap résiduel = puissance/amplitude
+V4_4tok               ERREUR: Aucun weights.pkl trouvé dans /export/tmp/
+V4_6tok                0.3773    0.9985   0.9986  ✅ Bonne direction WMMSE — gap résiduel = puissance/amplitude
+V5.2_2L                0.3684    0.9918   0.9921  ✅ Bonne direction WMMSE — gap résiduel = puissance/amplitude
+V5Base_2L             ERREUR: Mismatch poids: sauvés=123 vs modèle=117
+
+Poids d'échelle notables:
+  V4.2_3tok: MORTS    = ['s_freq']
+  V4.2_6tok: MORTS    = ['s_freq']
+  V4_6tok: MORTS    = ['s_freq']
+  V5.2_2L: DOMINANTS = ['s_user']

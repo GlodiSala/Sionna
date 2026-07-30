@@ -1,0 +1,168 @@
+{
+  "V4.2_1tok": {
+    "run": "V4.2_1tok",
+    "scale_weights": {
+      "alpha": 0.08986110985279083,
+      "s_freq": 0.02948405034840107,
+      "s_user": 0.27754831314086914,
+      "s_ffn": 0.14045320451259613
+    },
+    "inter_user_corr": 0.362806295355161,
+    "cosine_wmmse": 0.9695725739002228,
+    "cosine_rzf": 0.9698772132396698,
+    "diagnostic": "\u2705 Bonne direction WMMSE \u2014 gap r\u00e9siduel = puissance/amplitude"
+  },
+  "V4.2_2tok": {
+    "run": "V4.2_2tok",
+    "scale_weights": {
+      "alpha": 0.10166095197200775,
+      "s_freq": 0.017179807648062706,
+      "s_user": 0.25997012853622437,
+      "s_ffn": 0.1430993229150772
+    },
+    "inter_user_corr": 0.3741809030373891,
+    "cosine_wmmse": 0.9913864135742188,
+    "cosine_rzf": 0.9915035466353098,
+    "diagnostic": "\u2705 Bonne direction WMMSE \u2014 gap r\u00e9siduel = puissance/amplitude"
+  },
+  "V4.2_3tok": {
+    "run": "V4.2_3tok",
+    "scale_weights": {
+      "alpha": 0.09030106663703918,
+      "s_freq": 0.0088820680975914,
+      "s_user": 0.27341166138648987,
+      "s_ffn": 0.16224275529384613
+    },
+    "inter_user_corr": 0.37747781972090405,
+    "cosine_wmmse": 0.9972916344801585,
+    "cosine_rzf": 0.9973459343115488,
+    "diagnostic": "\u2705 Bonne direction WMMSE \u2014 gap r\u00e9siduel = puissance/amplitude"
+  },
+  "V4.2_4tok": {
+    "run": "V4.2_4tok",
+    "scale_weights": {
+      "alpha": 0.09725447744131088,
+      "s_freq": 0.011663596145808697,
+      "s_user": 0.335044264793396,
+      "s_ffn": 0.23458676040172577
+    },
+    "inter_user_corr": 0.3777221937974294,
+    "cosine_wmmse": 0.9984581073125204,
+    "cosine_rzf": 0.9985098242759705,
+    "diagnostic": "\u2705 Bonne direction WMMSE \u2014 gap r\u00e9siduel = puissance/amplitude"
+  },
+  "V4.2_6tok": {
+    "run": "V4.2_6tok",
+    "scale_weights": {
+      "alpha": 0.06356370449066162,
+      "s_freq": 0.005616852082312107,
+      "s_user": 0.20370176434516907,
+      "s_ffn": 0.07623598724603653
+    },
+    "inter_user_corr": 0.37855392197767895,
+    "cosine_wmmse": 0.99922776222229,
+    "cosine_rzf": 0.9992483556270599,
+    "diagnostic": "\u2705 Bonne direction WMMSE \u2014 gap r\u00e9siduel = puissance/amplitude"
+  },
+  "V4_4tok": {
+    "error": "Aucun weights.pkl trouv\u00e9 dans /export/tmp/sala/test_projet/Trans/freq/Sionna/final/weights/V4_4tok-RB"
+  },
+  "V4_6tok": {
+    "run": "V4_6tok",
+    "scale_weights": {
+      "alpha": 0.04101182892918587,
+      "s_freq": 0.0011995654786005616,
+      "s_user": 0.1721924990415573,
+      "s_ffn": 0.04487287998199463
+    },
+    "inter_user_corr": 0.3772823711236318,
+    "cosine_wmmse": 0.9985088010629019,
+    "cosine_rzf": 0.9985605676968893,
+    "diagnostic": "\u2705 Bonne direction WMMSE \u2014 gap r\u00e9siduel = puissance/amplitude"
+  },
+  "V5.2_2L": {
+    "run": "V5.2_2L",
+    "scale_weights": {
+      "s_cross": 0.025650853291153908,
+      "s_sc": 0.10924789309501648,
+      "s_user": 1.0236386060714722,
+      "s_ffn": 0.21119798719882965,
+      "s_rb": 0.027766788378357887
+    },
+    "intra_entropy": [
+      {
+        "sc": [
+          2.1962337493896484,
+          2.0290372371673584,
+          2.2086477279663086,
+          1.6440410614013672
+        ],
+        "user": [
+          1.3479969501495361,
+          1.3174253702163696,
+          1.3487753868103027,
+          1.3168333768844604
+        ],
+        "sc_mean": 2.0194899439811707,
+        "user_mean": 1.3327577710151672
+      },
+      {
+        "sc": [
+          1.2949687242507935,
+          1.1357189416885376,
+          1.4647972583770752,
+          1.606874704360962
+        ],
+        "user": [
+          1.335328221321106,
+          1.3670352697372437,
+          1.2818483114242554,
+          1.3501614332199097
+        ],
+        "sc_mean": 1.375589907169342,
+        "user_mean": 1.3335933089256287
+      }
+    ],
+    "inter_entropy": [
+      {
+        "rb": [
+          1.5601588487625122,
+          0.8260550498962402,
+          1.6966817378997803,
+          0.952042818069458
+        ],
+        "user": [
+          1.3661280870437622,
+          1.3636362552642822,
+          1.3720214366912842,
+          1.3681113719940186
+        ],
+        "rb_mean": 1.2587346136569977,
+        "user_mean": 1.3674742877483368
+      },
+      {
+        "rb": [
+          1.5553311109542847,
+          1.57953679561615,
+          1.521793246269226,
+          1.4790273904800415
+        ],
+        "user": [
+          1.2920562028884888,
+          1.3665128946304321,
+          1.3593746423721313,
+          1.3181909322738647
+        ],
+        "rb_mean": 1.5339221358299255,
+        "user_mean": 1.3340336680412292
+      }
+    ],
+    "inter_user_corr": 0.36838509142398834,
+    "cosine_wmmse": 0.9918385942776998,
+    "cosine_rzf": 0.9920507967472076,
+    "diagnostic": "\u2705 Bonne direction WMMSE \u2014 gap r\u00e9siduel = puissance/amplitude"
+  },
+  "V5Base_2L": {
+    "error": "Mismatch poids: sauv\u00e9s=123 vs mod\u00e8le=117"
+  }
+}

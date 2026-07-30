@@ -1,0 +1,87 @@
+✅ GPU configured: PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1765180344.975971 3415545 gpu_device.cc:2020] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 185 MB memory:  -> device: 0, name: Tesla P100-SXM2-16GB, pci bus id: 0000:06:00.0, compute capability: 6.0
+================================================================================
+TRAINING WITH 50k CACHED CHANNELS
+================================================================================
+
+✅ Using Transformer Precoder
+🔧 Building Transformer Precoder...
+✅ Parameters: 1,324,960
+
+📂 Loading cached dataset...
+
+================================================================================
+  CHANNEL DATASET
+================================================================================
+  Target size: 50,000 samples
+  Cache file: /export/tmp/sala/cached_sionna_50k_4x4.npy
+================================================================================
+
+📂 Loading existing cached dataset...
+   Loading /export/tmp/sala/cached_sionna_50k_4x4.npy...
+   (This may take 30-60 seconds for large files...)
+✅ Loaded 50,000 samples in 2.7s
+   Shape: (50000, 4, 1, 1, 4, 14, 72)
+   Mean power: 0.983040
+CachedTrainer
+
+================================================================================
+  HYBRID TRAINING (WMMSE WARM-START + FINE-TUNING)
+================================================================================
+  Total Epochs:     100
+  Warm-up (WMMSE):  8 epochs
+  Fine-tune (Hybrid): 92 epochs
+  Batch Size:       256
+  Initial LR:       0.001 → 0.0001
+  BCE Weight:       0
+  Rate Weight:      1
+================================================================================
+
+
+🕵️‍♂️ RUNNING DIMENSION DIAGNOSTIC...
+I0000 00:00:1765180358.302678 3415545 cuda_solvers.cc:175] Creating GpuSolver handles for stream 0x92343d0
+1. Raw h_freq Input Shape: (2, 4, 1, 1, 4, 14, 72)
+2. Squeezed Shape:        (2, 4, 4, 14, 72) (Target: [B, Rx, Tx, OFDM, FFT])
+3. Corrected Permutation: (2, 14, 72, 4, 4)
+4. RB Reshape:            (2, 14, 6, 12, 4, 4)
+✅ Diagnostic Complete.
+
+
+============================================================
+🔬 RUNNING PRECODER DIAGNOSTIC TEST
+============================================================
+1️⃣  Generating Dummy Inputs...
+    h_freq shape: (2, 4, 1, 1, 4, 14, 72)
+    x_rg shape:   (2, 1, 4, 14, 72)
+
+2️⃣  Running Precoder Forward Pass...
+    ✅ Forward pass successful!
+    Output 'g' shape: (2, 1, 14, 72, 4, 4)
+    ✅ Shape MATCHES expected Siona/Matmul format.
+
+3️⃣  Testing Sionna 'compute_effective_channel'...
+    ✅ compute_effective_channel successful!
+    Effective channel shape: (2, 4, 1, 1, 4, 14, 72)
+
+4️⃣  Testing System Matrix Multiplication (x_precoded)...
+    ✅ Matrix Multiplication successful!
+    Tx Signal Shape: (2, 14, 72, 4, 1)
+
+🎉 ALL TESTS PASSED. DIMENSIONS ARE CORRECT.
+  -> Auto-configured: 195 iterations/epoch
+🚀 Training @ 20.0 dB
+===========================================================================================================================================================
+ Epoch |       Mode |   Sum Rate |                               User Rates |        BER |     Grad |     Loss
+===========================================================================================================================================================
+I0000 00:00:1765180384.977963 3415545 cuda_executor.cc:508] failed to allocate 64.00MiB (67108864 bytes) from device: RESOURCE_EXHAUSTED: : CUDA_ERROR_OUT_OF_MEMORY: out of memory
+I0000 00:00:1765180385.039395 3415545 cuda_executor.cc:508] failed to allocate 65.52MiB (68707840 bytes) from device: RESOURCE_EXHAUSTED: : CUDA_ERROR_OUT_OF_MEMORY: out of memory
+I0000 00:00:1765180385.039529 3415545 cuda_executor.cc:508] failed to allocate 58.97MiB (61837056 bytes) from device: RESOURCE_EXHAUSTED: : CUDA_ERROR_OUT_OF_MEMORY: out of memory
+I0000 00:00:1765180385.039666 3415545 cuda_executor.cc:508] failed to allocate 53.08MiB (55653376 bytes) from device: RESOURCE_EXHAUSTED: : CUDA_ERROR_OUT_OF_MEMORY: out of memory
+I0000 00:00:1765180385.039750 3415545 cuda_executor.cc:508] failed to allocate 47.77MiB (50088192 bytes) from device: RESOURCE_EXHAUSTED: : CUDA_ERROR_OUT_OF_MEMORY: out of memory
+I0000 00:00:1765180385.039834 3415545 cuda_executor.cc:508] failed to allocate 42.99MiB (45079552 bytes) from device: RESOURCE_EXHAUSTED: : CUDA_ERROR_OUT_OF_MEMORY: out of memory
+I0000 00:00:1765180385.039931 3415545 cuda_executor.cc:508] failed to allocate 65.52MiB (68707840 bytes) from device: RESOURCE_EXHAUSTED: : CUDA_ERROR_OUT_OF_MEMORY: out of memory
+I0000 00:00:1765180385.040019 3415545 cuda_executor.cc:508] failed to allocate 58.97MiB (61837056 bytes) from device: RESOURCE_EXHAUSTED: : CUDA_ERROR_OUT_OF_MEMORY: out of memory
+I0000 00:00:1765180385.040106 3415545 cuda_executor.cc:508] failed to allocate 53.08MiB (55653376 bytes) from device: RESOURCE_EXHAUSTED: : CUDA_ERROR_OUT_OF_MEMORY: out of memory
+I0000 00:00:1765180385.040202 3415545 cuda_executor.cc:508] failed to allocate 47.77MiB (50088192 bytes) from device: RESOURCE_EXHAUSTED: : CUDA_ERROR_OUT_OF_MEMORY: out of memory
+I0000 00:00:1765180385.040268 3415545 cuda_executor.cc:508] failed to allocate 42.99MiB (45079552 bytes) from device: RESOURCE_EXHAUSTED: : CUDA_ERROR_OUT_OF_MEMORY: out of memory

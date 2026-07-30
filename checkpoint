@@ -1,0 +1,2 @@
+model_checkpoint_path: "transformer_5d_sionna_epoch_20_20250923_004928"
+all_model_checkpoint_paths: "transformer_5d_sionna_epoch_20_20250923_004928"

@@ -1,0 +1,190 @@
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1776394190.256610 3023458 gpu_device.cc:2020] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 20870 MB memory:  -> device: 0, name: NVIDIA L40S, pci bus id: 0000:01:00.0, compute capability: 8.9
+I0000 00:00:1776394192.990225 3023458 cuda_solvers.cc:175] Creating GpuSolver handles for stream 0x8f69540
+Génération des batches de canaux...
+  6 batches — shape: (32, 4, 1, 1, 8, 14, 72)
+
+=================================================================
+Références baselines (batch 0)
+=================================================================
+  WMMSE corr inter-user : 0.3809
+  RZF   corr inter-user : 0.3737
+  Entropie uniforme SC  : log(12) = 2.485
+  Entropie uniforme user: log(4)  = 1.386
+
+=================================================================
+  V4.2_1tok  [V4.2_1tok-RB]
+=================================================================
+TransformerPrecoderV4 [V4.2] | tokens_per_rb=1 | sc_per_token=12 | embed_dim=128 | upsample=Conv1DTranspose(k=12) | refine=[w_up, h_ri, |h|, ∠h] k=12
+    ✓ best_20260318_205000/weights.pkl  (sum_rate=28.063)
+
+  D1 — Scale weights:
+    alpha                               +0.0899
+    s_freq                              +0.0295
+    s_user                              +0.2775
+    s_ffn                               +0.1405
+
+  D3/D4 — Séparation spatiale & alignement directionnel:
+    Corr inter-user : 0.3628  [ref WMMSE=0.3809, RZF=0.3737]
+    Cosine → WMMSE  : 0.9696
+    Cosine → RZF    : 0.9699
+    Diagnostic : ✅ Bonne direction WMMSE — gap résiduel = puissance/amplitude
+
+=================================================================
+  V4.2_2tok  [V4.2_2tok-RB]
+=================================================================
+TransformerPrecoderV4 [V4.2] | tokens_per_rb=2 | sc_per_token=6 | embed_dim=128 | upsample=Conv1DTranspose(k=6) | refine=[w_up, h_ri, |h|, ∠h] k=12
+    ✓ best_20260319_002146/weights.pkl  (sum_rate=32.103)
+
+  D1 — Scale weights:
+    alpha                               +0.1017
+    s_freq                              +0.0172
+    s_user                              +0.2600
+    s_ffn                               +0.1431
+
+  D3/D4 — Séparation spatiale & alignement directionnel:
+    Corr inter-user : 0.3742  [ref WMMSE=0.3809, RZF=0.3737]
+    Cosine → WMMSE  : 0.9914
+    Cosine → RZF    : 0.9915
+    Diagnostic : ✅ Bonne direction WMMSE — gap résiduel = puissance/amplitude
+
+=================================================================
+  V4.2_3tok  [V4.2_3tok-RB]
+=================================================================
+TransformerPrecoderV4 [V4.2] | tokens_per_rb=3 | sc_per_token=4 | embed_dim=128 | upsample=Conv1DTranspose(k=4) | refine=[w_up, h_ri, |h|, ∠h] k=12
+    ✓ best_20260319_035709/weights.pkl  (sum_rate=33.449)
+
+  D1 — Scale weights:
+    alpha                               +0.0903
+    s_freq                              +0.0089  ← MORT
+    s_user                              +0.2734
+    s_ffn                               +0.1622
+
+  D3/D4 — Séparation spatiale & alignement directionnel:
+    Corr inter-user : 0.3775  [ref WMMSE=0.3809, RZF=0.3737]
+    Cosine → WMMSE  : 0.9973
+    Cosine → RZF    : 0.9973
+    Diagnostic : ✅ Bonne direction WMMSE — gap résiduel = puissance/amplitude
+
+=================================================================
+  V4.2_4tok  [V4.2_4tok-RB]
+=================================================================
+TransformerPrecoderV4 [V4.2] | tokens_per_rb=4 | sc_per_token=3 | embed_dim=128 | upsample=Conv1DTranspose(k=3) | refine=[w_up, h_ri, |h|, ∠h] k=12
+    ✓ best_20260319_092852/weights.pkl  (sum_rate=33.854)
+
+  D1 — Scale weights:
+    alpha                               +0.0973
+    s_freq                              +0.0117
+    s_user                              +0.3350
+    s_ffn                               +0.2346
+
+  D3/D4 — Séparation spatiale & alignement directionnel:
+    Corr inter-user : 0.3777  [ref WMMSE=0.3809, RZF=0.3737]
+    Cosine → WMMSE  : 0.9985
+    Cosine → RZF    : 0.9985
+    Diagnostic : ✅ Bonne direction WMMSE — gap résiduel = puissance/amplitude
+
+=================================================================
+  V4.2_6tok  [V4.2_6tok-RB]
+=================================================================
+TransformerPrecoderV4 [V4.2] | tokens_per_rb=6 | sc_per_token=2 | embed_dim=128 | upsample=Conv1DTranspose(k=2) | refine=[w_up, h_ri, |h|, ∠h] k=12
+    ✓ best_20260319_162214/weights.pkl  (sum_rate=34.141)
+
+  D1 — Scale weights:
+    alpha                               +0.0636
+    s_freq                              +0.0056  ← MORT
+    s_user                              +0.2037
+    s_ffn                               +0.0762
+
+  D3/D4 — Séparation spatiale & alignement directionnel:
+    Corr inter-user : 0.3786  [ref WMMSE=0.3809, RZF=0.3737]
+    Cosine → WMMSE  : 0.9992
+    Cosine → RZF    : 0.9992
+    Diagnostic : ✅ Bonne direction WMMSE — gap résiduel = puissance/amplitude
+
+=================================================================
+  V4_4tok  [V4_4tok-RB]
+=================================================================
+TransformerPrecoderV4 [V4.0] | tokens_per_rb=4 | sc_per_token=3 | embed_dim=128 | upsample=tf.repeat | refine=[w_up, h_ri] k=3+1
+  ✗ SKIP: Aucun weights.pkl trouvé dans /export/tmp/sala/test_projet/Trans/freq/Sionna/final/weights/V4_4tok-RB
+
+=================================================================
+  V4_6tok  [V4_6tok-RB]
+=================================================================
+TransformerPrecoderV4 [V4.0] | tokens_per_rb=6 | sc_per_token=2 | embed_dim=128 | upsample=tf.repeat | refine=[w_up, h_ri] k=3+1
+    ✓ best_20260318_142232/weights.pkl  (sum_rate=33.247)
+
+  D1 — Scale weights:
+    alpha                               +0.0410
+    s_freq                              +0.0012  ← MORT
+    s_user                              +0.1722
+    s_ffn                               +0.0449
+
+  D3/D4 — Séparation spatiale & alignement directionnel:
+    Corr inter-user : 0.3773  [ref WMMSE=0.3809, RZF=0.3737]
+    Cosine → WMMSE  : 0.9985
+    Cosine → RZF    : 0.9986
+    Diagnostic : ✅ Bonne direction WMMSE — gap résiduel = puissance/amplitude
+
+=================================================================
+  V5.2_2L  [V5.2_2L_128d]
+=================================================================
+TransformerPrecoderV5.2 | rb_size=12 | num_rb=6 | embed_dim=128 | intra=2(shared) | inter=2 | feat_dim=100 | swin_shift=False | gate=additive
+    ✓ best_20260319_230824/weights.pkl  (sum_rate=31.602)
+
+  D1 — Scale weights:
+    s_cross                             +0.0257
+    s_sc                                +0.1092
+    s_user                              +1.0236  ← DOMINANT
+    s_ffn                               +0.2112
+    s_rb                                +0.0278
+
+  D2 — Entropie attention:
+    Seuil uniforme : SC=log(12)=2.485 | user=log(4)=1.386 | RB=log(6)=1.792
+    IntraRB[0] SC   ['2.196', '2.029', '2.209', '1.644']  moy=2.019
+    IntraRB[0] User ['1.348', '1.317', '1.349', '1.317']  moy=1.333  ← UNIFORME (mort)
+    IntraRB[1] SC   ['1.295', '1.136', '1.465', '1.607']  moy=1.376
+    IntraRB[1] User ['1.335', '1.367', '1.282', '1.350']  moy=1.334  ← UNIFORME (mort)
+    InterRB[0] RB   ['1.560', '0.826', '1.697', '0.952']  moy=1.259
+    InterRB[0] User ['1.366', '1.364', '1.372', '1.368']  moy=1.367  ← UNIFORME (mort)
+    InterRB[1] RB   ['1.555', '1.580', '1.522', '1.479']  moy=1.534
+    InterRB[1] User ['1.292', '1.367', '1.359', '1.318']  moy=1.334  ← UNIFORME (mort)
+
+  D3/D4 — Séparation spatiale & alignement directionnel:
+    Corr inter-user : 0.3684  [ref WMMSE=0.3809, RZF=0.3737]
+    Cosine → WMMSE  : 0.9918
+    Cosine → RZF    : 0.9921
+    Diagnostic : ✅ Bonne direction WMMSE — gap résiduel = puissance/amplitude
+
+=================================================================
+  V5Base_2L  [V5-Base_2L_128d]
+=================================================================
+TransformerPrecoderV5.2 | rb_size=12 | num_rb=6 | embed_dim=128 | intra=2(shared) | inter=2 | feat_dim=100 | swin_shift=True | gate=additive
+    ✓ best_20260317_204744/weights.pkl  (sum_rate=32.153)
+  ✗ SKIP: Mismatch poids: sauvés=123 vs modèle=117
+
+
+=================================================================
+RAPPORT CONSOLIDÉ
+=================================================================
+Réf: WMMSE corr=0.3809 | RZF corr=0.3737
+
+Modèle                  Corr↓   →WMMSE↑    →RZF↑  Diagnostic
+-----------------------------------------------------------------
+V4.2_1tok              0.3628    0.9696   0.9699  ✅ Bonne direction WMMSE — gap résiduel = puissance/amplitude
+V4.2_2tok              0.3742    0.9914   0.9915  ✅ Bonne direction WMMSE — gap résiduel = puissance/amplitude
+V4.2_3tok              0.3775    0.9973   0.9973  ✅ Bonne direction WMMSE — gap résiduel = puissance/amplitude
+V4.2_4tok              0.3777    0.9985   0.9985  ✅ Bonne direction WMMSE — gap résiduel = puissance/amplitude
+V4.2_6tok              0.3786    0.9992   0.9992  ✅ Bonne direction WMMSE — gap résiduel = puissance/amplitude
+V4_4tok               ERREUR: Aucun weights.pkl trouvé dans /export/tmp/
+V4_6tok                0.3773    0.9985   0.9986  ✅ Bonne direction WMMSE — gap résiduel = puissance/amplitude
+V5.2_2L                0.3684    0.9918   0.9921  ✅ Bonne direction WMMSE — gap résiduel = puissance/amplitude
+V5Base_2L             ERREUR: Mismatch poids: sauvés=123 vs modèle=117
+
+Poids d'échelle notables:
+  V4.2_3tok: MORTS    = ['s_freq']
+  V4.2_6tok: MORTS    = ['s_freq']
+  V4_6tok: MORTS    = ['s_freq']
+  V5.2_2L: DOMINANTS = ['s_user']
+
+✅ diag_report.txt + diag_report.json sauvegardés
