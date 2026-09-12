@@ -5,9 +5,23 @@ sur la plage SNR la plus large possible avec le pipeline déjà validé
 (qui ne couvrait que 15/17.5/20dB) à EVALUATION_SNR_RANGE complète
 (0 à 20dB, 9 points), pour RZF/WMMSE + les 3 architectures signed_attn.
 
-Usage: CUDA_VISIBLE_DEVICES=<gpu> python3 experiments/eval_ber_umi_standard.py
+Protocole de graine (ajout du 12/09, aligné sur la campagne seedfix) :
+`sionna_config.seed = SEED` en plus de `tf.random.set_seed`, et la graine est
+REMISE A ZERO juste avant l'évaluation de chaque méthode (après construction
+du modèle et chargement des poids, pour que l'initialisation des poids ne
+désynchronise pas le flux). Chaque méthode voit donc la MEME séquence de
+topologies/canaux/bits/bruit : les BER deviennent comparables par paires, ce
+qui n'était pas le cas de la version d'origine (tirages indépendants par
+méthode). Le nombre de tirages par point est identique pour toutes les
+méthodes, donc l'appariement tient.
+
+Sortie : results/diag_ber_umi_standard_seedfix_<horodatage>.json. Le fichier
+historique results/diag_ber_signed_attn_full_range.json (tirages non
+appariés) n'est PAS écrasé -- c'est lui qui alimente encore figD_ber_snr.py.
+
+Usage: CUDA_VISIBLE_DEVICES=<gpu> python3 experiments/eval_ber_umi_standard.py [--num_batches N]
 """
-import os, sys, json
+import os, sys, json, time, argparse
 import numpy as np
 import tensorflow as tf
 tf.get_logger().setLevel('ERROR')
@@ -23,8 +37,25 @@ from precoders.signed_attention import (SingleSCTransformerPrecoderSignedAttn,
                                     IntraRBTransformerPrecoderSignedAttn,
                                     TransformerPrecoderCleanResidualSignedAttn)
 
-NUM_BATCHES = 50
-BATCH_SIZE = 256
+_p = argparse.ArgumentParser()
+_p.add_argument('--num_batches', type=int, default=50,
+                help='tirages Monte-Carlo par point SNR et par méthode (défaut 50)')
+_p.add_argument('--batch_size', type=int, default=256)
+_args = _p.parse_args()
+
+NUM_BATCHES = _args.num_batches
+BATCH_SIZE = _args.batch_size
+SEED = 42
+
+from sionna.phy.config import config as sionna_config
+
+
+def reset_seed():
+    """Remet le flux aléatoire à l'état initial -- appelé avant CHAQUE méthode
+    pour que toutes voient la même séquence de canaux (appariement)."""
+    tf.random.set_seed(SEED)
+    np.random.seed(SEED)
+    sionna_config.seed = SEED
 
 RESULT_JSONS = {
     'SingleSC-signed_attn': ('single_sc', 'results/diag_front_a_signed_attn.json',
@@ -50,6 +81,7 @@ if __name__ == '__main__':
 
     for bname, ptype in [('RZF', 'rzf'), ('WMMSE', 'wmmse')]:
         sys_ = MU_MIMO_System(num_tx=NUM_TX, num_rx=NUM_RX, precoder_type=ptype)
+        reset_seed()
         results_all[bname] = evaluate_system(sys_, EVALUATION_SNR_RANGE, NUM_BATCHES, BATCH_SIZE, bname)
 
     for name, (base_ptype, json_path, builder) in RESULT_JSONS.items():
@@ -64,6 +96,7 @@ if __name__ == '__main__':
         _ = system.precoder(dummy_h, no=tf.constant(0.01), training=False)
         ok = system.load_weights_from(ckpt)
         assert ok, f"chargement échoué {name}"
+        reset_seed()
         results_all[name] = evaluate_system(system, EVALUATION_SNR_RANGE, NUM_BATCHES, BATCH_SIZE, name)
 
     print(f'\n{"="*110}\nBER comparatif complet -- signed_attn vs classiques, UMi (M8K4)\n{"="*110}')
@@ -71,10 +104,18 @@ if __name__ == '__main__':
     for name, r in results_all.items():
         print(f'{name:<28} ' + ' '.join(f'{b:>11.2e}' for b in r['ber']))
 
-    out = {}
+    out = {'metadata': {
+        'seed': SEED,
+        'seed_fix': 'sionna_config.seed = SEED, remis a zero avant chaque methode (tirages apparies)',
+        'num_batches': NUM_BATCHES, 'batch_size': BATCH_SIZE,
+        'tokens_per_rb_ta_rb': 6,
+        'checkpoints': {n: resolve_ckpt(j) for n, (_, j, _) in RESULT_JSONS.items()},
+        'timestamp': time.strftime('%Y-%m-%d %H:%M:%S %z'),
+    }}
     for name, r in results_all.items():
         out[name] = {'snr': EVALUATION_SNR_RANGE.tolist(), 'sum_rate': r['sum_rate'], 'ber': r['ber'],
                       'flops_M': r['flops_M'], 'params_K': r['params_K']}
-    with open('results/diag_ber_signed_attn_full_range.json', 'w') as f:
+    dst = f"results/diag_ber_umi_standard_seedfix_{time.strftime('%Y%m%d_%H%M%S')}.json"
+    with open(dst, 'w') as f:
         json.dump(out, f, indent=2)
-    print('\n✅ Sauvé -> results/diag_ber_signed_attn_full_range.json')
+    print(f'\n✅ Sauvé -> {dst}')

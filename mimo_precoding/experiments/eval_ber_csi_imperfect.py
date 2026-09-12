@@ -12,9 +12,18 @@ MU_MIMO_System._forward_from_precoder(b, c, x_rg, h_true, g_from_h_est,
 no) -- réutilise directement la méthode interne du pipeline déjà
 validé (system.py), pas de nouvelle logique de détection/LDPC.
 
-Usage: CUDA_VISIBLE_DEVICES=<gpu> python3 experiments/eval_ber_csi_imperfect.py
+Protocole de graine (ajout du 12/09, aligné sur la campagne seedfix) :
+graine Sionna verrouillée et REMISE A ZERO avant chaque méthode (y compris
+le RandomState numpy du bruit de pilote, recréé par méthode) -- toutes les
+méthodes voient les mêmes canaux ET le même bruit d'estimation. La version
+d'origine partageait un seul RandomState séquentiel entre les méthodes.
+
+Sortie : results/diag_ber_csi_imperfect_seedfix_<horodatage>.json ; le
+fichier historique n'est pas écrasé.
+
+Usage: CUDA_VISIBLE_DEVICES=<gpu> python3 experiments/eval_ber_csi_imperfect.py [--num_batches N]
 """
-import os, sys, json
+import os, sys, json, time, argparse
 import numpy as np
 import tensorflow as tf
 tf.get_logger().setLevel('ERROR')
@@ -43,9 +52,23 @@ NUM_BATCHES = 15   # réduit de 50 -- génération de canal (UMi CIR) domine le
                    # raisonnable vu que le BER sous CSI imparfait est nettement
                    # plus élevé (moins de batches nécessaires pour un
                    # échantillon stable) que sous CSI parfait
-BATCH_SIZE = 256
+_p = argparse.ArgumentParser()
+_p.add_argument('--num_batches', type=int, default=NUM_BATCHES)
+_p.add_argument('--batch_size', type=int, default=256)
+_args = _p.parse_args()
+NUM_BATCHES = _args.num_batches
+BATCH_SIZE = _args.batch_size
 SEED = 2026
-OUT_JSON = 'results/diag_ber_csi_imperfect.json'
+OUT_JSON = f"results/diag_ber_csi_imperfect_seedfix_{time.strftime('%Y%m%d_%H%M%S')}.json"
+
+from sionna.phy.config import config as sionna_config
+
+
+def reset_seed():
+    tf.random.set_seed(SEED)
+    np.random.seed(SEED)
+    sionna_config.seed = SEED
+    return np.random.RandomState(SEED)
 
 RESULT_JSONS = {
     'SingleSC-signed_attn': ('single_sc', 'results/diag_front_a_signed_attn.json',
@@ -103,14 +126,20 @@ def eval_ber_imperfect(system, precoder_fn, rng, name):
 
 if __name__ == '__main__':
     os.makedirs('results', exist_ok=True)
-    rng = np.random.RandomState(SEED)
-    results = {}
+    results = {'metadata': {
+        'seed': SEED,
+        'seed_fix': 'sionna_config.seed + RandomState remis a zero avant chaque methode (tirages apparies)',
+        'num_batches': NUM_BATCHES, 'batch_size': BATCH_SIZE,
+        'pilot_snr_db': PILOT_SNR_DB, 'data_snrs': DATA_SNRS_DB,
+        'tokens_per_rb_ta_rb': 4,
+        'timestamp': time.strftime('%Y-%m-%d %H:%M:%S %z'),
+    }}
 
     for bname, ptype in [('RZF', 'rzf'), ('WMMSE', 'wmmse')]:
         system = MU_MIMO_System(num_tx=NUM_TX, num_rx=NUM_RX, precoder_type=ptype)
         pfn = ((lambda h, no: rzf_precoder(h, stream_management=system.sm, no=no)) if ptype == 'rzf'
                else (lambda h, no: wmmse_precoder(h, no=no, stream_management=system.sm, num_iterations=10)))
-        results[bname] = eval_ber_imperfect(system, pfn, rng, bname)
+        results[bname] = eval_ber_imperfect(system, pfn, reset_seed(), bname)
         with open(OUT_JSON, 'w') as f:
             json.dump(results, f, indent=2)   # sauvé après chaque méthode -- reprenable
 
@@ -130,7 +159,7 @@ if __name__ == '__main__':
         assert ok, f"chargement échoué {name}"
 
         pfn = lambda h, no: system._call_precoder(h, no, training=False)
-        results[name] = eval_ber_imperfect(system, pfn, rng, name)
+        results[name] = eval_ber_imperfect(system, pfn, reset_seed(), name)
         with open(OUT_JSON, 'w') as f:
             json.dump(results, f, indent=2)
 
