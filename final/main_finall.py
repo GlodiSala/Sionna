@@ -32,8 +32,14 @@ from sionna.phy.mapping import Mapper, Demapper, BinarySource
 from sionna.phy.utils import compute_ber, ebnodb2no
 
 from datasets import CachedSionnaDataset
-from precoder_intra_rb import IntraRBTransformerPrecoder
+from precoder_intra_rb import IntraRBTransformerPrecoder, SingleSCTransformerPrecoder
 from precoders_w import rzf_precoder, wmmse_precoder, TransformerPrecoderV4, TransformerPrecoderV5
+# TA-RB nettoyé (ÉTAPE 1, SESSION_NUIT_RESUME.md) : fix OFDM (1 symbole+tile)
+# + décodeur v4.2 sans gate + features réduites mean+var. Remplace
+# TransformerPrecoderV4 comme architecture TA-RB de référence -- V4/V5
+# restent importables ci-dessus pour comparaison ponctuelle mais ne sont
+# plus dans MODELS_TO_TRAIN par défaut (voir plus bas).
+from precoders_v2 import TransformerPrecoderClean, TransformerPrecoderCleanResidual
 
 # =============================================================================
 # CONFIGURATION GLOBALE — un seul endroit à modifier
@@ -42,8 +48,11 @@ from precoders_w import rzf_precoder, wmmse_precoder, TransformerPrecoderV4, Tra
 SEED         = 42
 
 # Locked Stage 3/4 channel config -- see channel_config.py for the full
-# validation trail (mechanism: forced LOS + 15deg azimuth window + 50%
-# loading ratio, validated consistent from standard to massive-MIMO scale).
+# validation trail. REVISION 2026-08-07 (b): mechanism is now spatial user
+# clustering under NLOS (standard 3GPP sector, users drawn close to each
+# other within CLUSTER_RADIUS_M), not the old narrow-angle-window+LOS
+# mechanism. MASSIVE_CONFIG rescaled from M64K32 to M32K8 in the same
+# revision (M=64 showed no gap under any tested lever -- channel hardening).
 # Switch CHOSEN_CONFIG to retarget training between the two locked scales --
 # this is the one place to change it.
 from channel_config import STANDARD_CONFIG, MASSIVE_CONFIG, FFT_SIZE
@@ -51,7 +60,17 @@ CHOSEN_CONFIG = STANDARD_CONFIG   # or MASSIVE_CONFIG
 NUM_TX       = CHOSEN_CONFIG['NUM_TX']
 NUM_RX       = CHOSEN_CONFIG['NUM_RX']
 BATCH_SIZE   = 128
-DATASET_SIZE = 5000
+# REVISION 2026-08-07 (§0 fix, see SESSION_NUIT_RESUME.md / datasets.py
+# module docstring): DATASET_SIZE is now the number of INDEPENDENTLY,
+# JOINTLY-drawn K-user cluster samples in the training pool -- no
+# augmentation multiplier anymore (the old x50 recombination trick is
+# exactly what destroyed the spatial cluster correlation). Storage now
+# scales with K too, unlike the old single-user cache, so MASSIVE (K=8,
+# M=32) gets a smaller pool than STANDARD (K=4, M=8) to keep cache size
+# reasonable: ~20000*4*8*14*96*8B=6.7GB (STANDARD) vs ~8000*8*32*14*96*8B
+# =21GB (MASSIVE) -- checked against /export/tmp/sala free space (5.2TB)
+# before picking these, plenty of headroom either way.
+DATASET_SIZE = 20000 if CHOSEN_CONFIG is STANDARD_CONFIG else 8000
 
 TRAINING_SNR         = 15.0
 SNR_MIN_TRAIN        = 5.0    # range SNR pendant l'entraînement
@@ -59,10 +78,25 @@ SNR_MAX_TRAIN        = 25.0
 EVALUATION_SNR_RANGE = np.array([0, 2.5, 5, 7.5, 10, 12.5, 15, 17.5, 20],
                                   dtype=np.float32)
 
+# ÉTAPE 3 (SESSION_NUIT_RESUME.md) : protocole revalidé après le fix §0.
+# Recherche sur STANDARD (diag_lr_schedule_search.py + diag_lr_extended.py) :
+# schedule 'baseline' (cosinus court, decay to alpha=0.01 sur le budget
+# exact) confirmé trop agressif -- 'cosine_long' (cosinus sur horizon 2x le
+# budget réel, donc décroissance plus douce) gagne +8 à +11 points de
+# %WMMSE à budget de pas IDENTIQUE (25ep : 70.5%->81.1% à 15dB), et les
+# courbes ne plateauent pas avant ~60 époques (25ep encore clairement en
+# hausse). warmup_epochs réduit 5->3 (juste une init MSE-vs-RZF, pas la
+# variable étudiée). finetune_epochs monté 20->80 (60 en recherche,
+# marge en plus pour les runs complets ÉTAPE 4 vu que la courbe n'était
+# pas totalement plateauée à 60). steps_per_epoch fixé explicitement
+# (150) au lieu de dépendre de dataset_size//batch_size -- indépendant du
+# choix de taille de pool (voir SupervisedTrainer, §0 fix note).
 TRAINING_CONFIG = {
-    'warmup_epochs'  : 5,
-    'finetune_epochs': 20,
+    'warmup_epochs'  : 3,
+    'finetune_epochs': 80,
     'learning_rate'  : 1e-3,
+    'lr_schedule'    : 'cosine_long',
+    'steps_per_epoch': 150,
 }
 
 # Énergie : bit-widths pour le modèle lab
@@ -75,41 +109,62 @@ Q_A = 16   # activations FP16
 
 MODELS_TO_TRAIN = [
 
-    # ── 1. IntraRB — contribution principale ─────────────────────────────────
-    # Poids partagés entre RBs → fréquence-agnostique → 1 circuit HLS pour N_RB
+    # ── 1. Single-SC — baseline correspondant au déploiement HLS actuel ──────
+    # Traitement par SC indépendant, pas de SC-attention, features réduites
+    # (Volet 2, déjà validé : abs=True, cos/sin=False, feat_dim=3M+1).
+    {
+        'name'      : 'SingleSC_4L_128d',
+        'type'      : 'single_sc',
+        'sys_kwargs': {'embed_dim': 128, 'num_heads': 4, 'num_layers': 4},
+        'batch_size': 256,
+    },
+
+    # ── 2. IntraRB nettoyé — contribution principale ──────────────────────────
+    # Poids partagés entre RBs → fréquence-agnostique → 1 circuit HLS pour
+    # N_RB. RB=12 fixe (décidé, pas de fenêtre glissante -- SESSION_NUIT_
+    # RESUME.md). Features réduites ÉTAPE 1 : re+im+abs+log_no, feat_dim
+    # 5M+1=41 -> 3M+1=25 (M=8). SC-attention + user-attention gardées.
     {
         'name'      : 'IntraRB_4L_128d',
         'type'      : 'intra_rb',
         'sys_kwargs': {'embed_dim': 128, 'num_heads': 4, 'num_layers': 4},
-        'batch_size': 256,   # réduit vs M=8 (feat_dim 41→321 = plus lourd)
+        'batch_size': 256,   # réduit vs M=8 (feat_dim historiquement plus lourd)
     },
 
-    # ── 2. V4.2 3tok — point Pareto-optimal V4 (référence de comparaison) ────
-    # 95.8% WMMSE à M=8 → voir si M=64 améliore le gap
+    # ── 3. TA-RB nettoyé, décodeur RÉSIDUEL — remplace V4/V5 (ÉTAPE 1) ────────
+    # TransformerPrecoderClean (precoders_v2.py) : fix OFDM (1 symbole+tile,
+    # canal statique confirmé -- ~14x moins de FLOPs réels), décodeur v4.2
+    # SANS gate sigmoid (ablation : gradient quasi nul, aucun gain mesuré),
+    # features réduites mean+var, feat_dim 53->29 (M=8/K=4).
+    # T=6 tok/RB (pas 3) : ÉTAPE 3 a testé T=3 vs T=6 au même protocole
+    # (diag_lr_extended.py --tokens_per_rb) -- T=3 sous-performait clairement
+    # (81.8% WMMSE à 15dB, moins bien que single_sc ET intra_rb malgré plus
+    # de params) ; T=6 remonte à 85.6%.
+    #
+    # Partie 2 (investigation "pourquoi IntraRB/TA-RB ne battent pas
+    # SingleSC", même session) : `ta_rb` (décodeur original, Conv1DTranspose
+    # appris) montrait un écart CROISSANT avec le SNR vs IntraRB, causalement
+    # attribué à la perte d'info fixe de la compression T=6 en régime
+    # MUI-limité (haut SNR) -- confirmé, pas un problème de gradient/
+    # optimisation. Corrigé par `ta_rb_residual`
+    # (TransformerPrecoderCleanResidual) : décodeur RÉSIDUEL (interpolation
+    # linéaire FIXE entre tokens + correction apprise, au lieu d'une
+    # reconstruction complète apprise) -- teste bon sur les DEUX régimes :
+    # CSI parfait (91.0% WMMSE à 15dB, quasi à égalité avec IntraRB 90.7%/
+    # SingleSC 91.4%, contre 86.5% pour le décodeur original) ET CSI
+    # imparfait (débruitage préservé ET amélioré, 87.7%/54.6% retenu à
+    # pilote 20/10dB contre 85.7%/51.0% pour l'original). Adopté comme
+    # standard TA-RB (`precoder_type='ta_rb_residual'`, remplace `'ta_rb'`
+    # ici) -- l'ancien décodeur (`'ta_rb'`) reste disponible pour
+    # comparaison ponctuelle, plus le chemin de training par défaut.
     {
-        'name'      : 'V4_3tok_4L_128d',
-        'type'      : 'transformer_rb',
-        'sys_kwargs': {
-            'embed_dim'    : 128,
-            'num_heads'    : 4,
-            'num_layers'   : 4,
-            'tokens_per_rb': 3,      # point Pareto-optimal des slides
-            'version'      : 'v4.2', # rich features + learned upsample
-        },
-        'batch_size': 256,
-    },
-
-    # ── 3. V4.2 6tok — point haute performance V4 ────────────────────────────
-    # 97.8% WMMSE à M=8 → complémente l'ablation tok/RB
-    {
-        'name'      : 'V4_6tok_4L_128d',
-        'type'      : 'transformer_rb',
+        'name'      : 'TA_RB_residual_6tok_4L_128d',
+        'type'      : 'ta_rb_residual',
         'sys_kwargs': {
             'embed_dim'    : 128,
             'num_heads'    : 4,
             'num_layers'   : 4,
             'tokens_per_rb': 6,
-            'version'      : 'v4.2',
         },
         'batch_size': 256,
     },
@@ -118,11 +173,17 @@ MODELS_TO_TRAIN = [
 # MODÈLE D'ÉNERGIE — identique au labo Energy.py
 # =============================================================================
 
+# Énergie d'un MAC 16 bits (pJ) — constante du modèle matériel
+ALPHA = 0.857904
+
 def energy_constants(Q):
     Q    = max(float(Q), 1e-5)
-    EMAC = 0.857904 * (Q / 16) ** 1.9
-    EM   = 2.0 * EMAC
-    EL   = EMAC
+    # E_MAC : non-linéaire (multiplieur matériel) — inchangé
+    EMAC = ALPHA * (Q / 16) ** 1.9
+    # E_M / E_L : accès mémoire → énergie linéaire en nombre de bits transférés.
+    # Correctif F. Leduc-Primeau : ne doivent PAS hériter de l'exposant 1.9 du MAC.
+    EM   = 2.0 * ALPHA * (Q / 16)
+    EL   = ALPHA * (Q / 16)
     return EMAC, EM, EL
 
 
@@ -187,7 +248,8 @@ class MU_MIMO_System(tf.keras.Model):
                  rb_size=12, embed_dim=128, num_heads=4,
                  num_layers=4, tokens_per_rb=1,
                  num_intra_layers=2, num_inter_layers=2,
-                 version='v4.0', weights_path=None):
+                 version='v4.0', weights_path=None,
+                 use_abs=True, use_cossin=False, alpha_init=0.1):
         super().__init__()
 
         self.num_bs_antennas     = num_tx
@@ -197,6 +259,11 @@ class MU_MIMO_System(tf.keras.Model):
         self.embed_dim           = embed_dim
         self.num_heads           = num_heads
         self.num_layers          = num_layers
+        # Volet 2 (features réduites) -- utilisé par 'single_sc' uniquement
+        self.use_abs             = use_abs
+        self.use_cossin          = use_cossin
+        # Partie 2 (décodeur résiduel TA-RB) -- utilisé par 'ta_rb_residual' uniquement
+        self.alpha_init           = alpha_init
         self.tokens_per_rb       = tokens_per_rb
         self.num_intra_layers    = num_intra_layers
         self.num_inter_layers    = num_inter_layers
@@ -274,6 +341,27 @@ class MU_MIMO_System(tf.keras.Model):
                 embed_dim=self.embed_dim, num_heads=self.num_heads,
                 num_layers=self.num_layers, version=self.version)
 
+        elif precoder_type == 'ta_rb':
+            print(f'✅ TransformerPrecoderClean (TA-RB nettoyé) | '
+                  f'{self.tokens_per_rb} tok/RB | D={self.embed_dim} L={self.num_layers}')
+            self.precoder = TransformerPrecoderClean(
+                num_tx=self.num_bs_antennas, num_rx=self.num_users,
+                num_ofdm=self.rg.num_ofdm_symbols, fft_size=self.rg.fft_size,
+                rb_size=rb_size, tokens_per_rb=self.tokens_per_rb,
+                embed_dim=self.embed_dim, num_heads=self.num_heads,
+                num_layers=self.num_layers, snr_aware=True)
+
+        elif precoder_type == 'ta_rb_residual':
+            print(f'✅ TransformerPrecoderCleanResidual (TA-RB décodeur résiduel, Partie 2) | '
+                  f'{self.tokens_per_rb} tok/RB | D={self.embed_dim} L={self.num_layers}')
+            self.precoder = TransformerPrecoderCleanResidual(
+                num_tx=self.num_bs_antennas, num_rx=self.num_users,
+                num_ofdm=self.rg.num_ofdm_symbols, fft_size=self.rg.fft_size,
+                rb_size=rb_size, tokens_per_rb=self.tokens_per_rb,
+                embed_dim=self.embed_dim, num_heads=self.num_heads,
+                num_layers=self.num_layers, snr_aware=True,
+                alpha_init=self.alpha_init)
+
         elif precoder_type == 'transformer_v5':
             print(f'✅ TransformerPrecoderV5')
             self.precoder = TransformerPrecoderV5(
@@ -282,6 +370,17 @@ class MU_MIMO_System(tf.keras.Model):
                 embed_dim=self.embed_dim, num_heads=self.num_heads,
                 num_intra_layers=self.num_intra_layers,
                 num_inter_layers=self.num_inter_layers, snr_aware=True)
+
+        elif precoder_type == 'single_sc':
+            print(f'✅ SingleSCTransformerPrecoder | '
+                  f'D={self.embed_dim} L={self.num_layers} H={self.num_heads} | '
+                  f'abs={self.use_abs} cos/sin={self.use_cossin}')
+            self.precoder = SingleSCTransformerPrecoder(
+                num_tx=self.num_bs_antennas, num_rx=self.num_users,
+                num_ofdm=self.rg.num_ofdm_symbols, fft_size=self.rg.fft_size,
+                embed_dim=self.embed_dim, num_heads=self.num_heads,
+                num_layers=self.num_layers, snr_aware=True,
+                use_abs=self.use_abs, use_cossin=self.use_cossin)
 
         elif precoder_type in ('rzf', 'wmmse'):
             print(f'✅ Précoder classique : {precoder_type.upper()}')
@@ -308,10 +407,11 @@ class MU_MIMO_System(tf.keras.Model):
 
     # ── Topologie ─────────────────────────────────────────────────────────────
     def new_topology(self, batch_size):
-        # Locked channel config (narrow azimuth window + forced LOS) -- see
-        # channel_config.py for why. Falls back to plain 3GPP topology if
-        # channel_config isn't importable, so this class stays usable
-        # standalone at other M/K.
+        # Locked channel config (spatial user clustering under NLOS, see
+        # REVISION (b) in channel_config.py) -- CLUSTER_RADIUS_M scales with
+        # array size (20m at M=8, 5m at M=32), NOT the same across configs.
+        # Falls back to plain 3GPP topology if channel_config isn't
+        # importable, so this class stays usable standalone at other M/K.
         try:
             from channel_config import set_locked_topology
         except ImportError:
@@ -319,9 +419,9 @@ class MU_MIMO_System(tf.keras.Model):
             self.channel_model.set_topology(*topology)
             return
         set_locked_topology(self.channel_model, batch_size, self.num_users,
-                             CHOSEN_CONFIG['HALF_ANGLE_DEG'],
-                             CHOSEN_CONFIG['FORCE_LOS'],
-                             CHOSEN_CONFIG['INDOOR_PROBABILITY'])
+                             cluster_radius_m=CHOSEN_CONFIG['CLUSTER_RADIUS_M'],
+                             force_los=CHOSEN_CONFIG['FORCE_LOS'],
+                             indoor_probability=CHOSEN_CONFIG['INDOOR_PROBABILITY'])
 
     # ── Forward pass complet (génération online) ──────────────────────────────
     @tf.function
@@ -438,6 +538,38 @@ class SimpleCheckpoint:
 
 
 # =============================================================================
+# LR SCHEDULE — rampe warmup->finetune (Priorité 2, demande utilisateur)
+# =============================================================================
+
+class RampedCosineLong(tf.keras.optimizers.schedules.LearningRateSchedule):
+    """Rampe linéaire de lr_start (où le warmup s'est arrêté) jusqu'à
+    lr_peak (le pic de cosine_long) sur ramp_steps pas, PUIS cosine_long
+    standard pour le reste. Remplace le switch brutal (nouvel optimiseur
+    construit directement au pic cosine_long, ~10x le LR de fin de warmup)
+    par une transition progressive -- SIMPLE (une classe, pas de
+    restructuration du training loop), pas de deep unfolding.
+    """
+    def __init__(self, lr_start, lr_peak, ramp_steps, decay_steps, alpha=0.05):
+        super().__init__()
+        self.lr_start    = lr_start
+        self.lr_peak     = lr_peak
+        self.ramp_steps  = float(ramp_steps)
+        self.cosine      = tf.keras.optimizers.schedules.CosineDecay(
+            lr_peak, decay_steps, alpha=alpha)
+
+    def __call__(self, step):
+        step = tf.cast(step, tf.float32)
+        ramp_frac = tf.clip_by_value(step / tf.maximum(self.ramp_steps, 1.0), 0.0, 1.0)
+        ramp_lr   = self.lr_start + ramp_frac * (self.lr_peak - self.lr_start)
+        cosine_lr = self.cosine(tf.maximum(step - self.ramp_steps, 0.0))
+        return tf.where(step < self.ramp_steps, ramp_lr, cosine_lr)
+
+    def get_config(self):
+        return {'lr_start': self.lr_start, 'lr_peak': self.lr_peak,
+                'ramp_steps': self.ramp_steps}
+
+
+# =============================================================================
 # TRAINER
 # =============================================================================
 
@@ -451,7 +583,8 @@ class SupervisedTrainer:
 
     def __init__(self, system, dataset, run_name='run',
                  warmup_epochs=5, finetune_epochs=15,
-                 learning_rate=2e-3, batch_size=256):
+                 learning_rate=2e-3, batch_size=256, steps_per_epoch=None,
+                 lr_schedule='baseline', ramp_epochs=3):
         self.system          = system
         self.dataset         = dataset
         self.warmup_epochs   = warmup_epochs
@@ -460,17 +593,72 @@ class SupervisedTrainer:
         self.batch_size      = batch_size
         self.rate_norm       = float(system.num_users) * 9.0
 
+        # §0 fix note: eff_size is now the joint-cluster POOL size (no
+        # augmentation multiplier), not an inflated "effective" count --
+        # see datasets.py. Coupling num_iters to it 1:1 (old behavior)
+        # would make steps/epoch collapse whenever the pool shrinks (e.g.
+        # smoke tests, or any dataset_size choice), which has nothing to
+        # do with how many gradient steps a training run actually needs
+        # (minibatches are drawn WITH replacement, so "epoch" here is just
+        # a cadence unit for logging/LR-schedule, not a full-pool pass).
+        # steps_per_epoch lets callers set that cadence directly; falls
+        # back to the old eff_size//batch_size heuristic if not given.
         eff_size       = getattr(dataset, 'effective_dataset_size',
                          len(getattr(dataset, 'h_freq_all', [0])))
-        self.num_iters = max(eff_size // batch_size, 1)
+        self.num_iters = (steps_per_epoch if steps_per_epoch is not None
+                           else max(eff_size // batch_size, 1))
 
-        # LR schedules (cosine decay)
+        # LR schedules. Warmup stays a short cosine regardless of
+        # `lr_schedule` -- it's just a sane MSE-vs-RZF initialization, not
+        # itself the thing ÉTAPE 3 is exploring (that's the finetune
+        # sum-rate phase, per SESSION_NUIT_RESUME.md's diagnosis: plateau
+        # likely caused by an LR/schedule too aggressive for the epoch
+        # budget, not architecture/loss). `lr_schedule` selects how the
+        # FINETUNE phase's LR is scheduled:
+        #   'baseline'     : short cosine decay to a low floor (previous/
+        #                    only behavior before ÉTAPE 3 -- suspected too
+        #                    aggressive for the step budget).
+        #   'constant_low' : flat LR, no decay -- tests whether decay
+        #                    itself (not just its speed) is the problem.
+        #   'cosine_long'  : cosine over a LONGER horizon than the actual
+        #                    step budget (decay_steps=2x), so the schedule
+        #                    only traverses the first half of the curve --
+        #                    gentler effective decay for the same steps.
+        #   'warm_restart' : SGDR-style periodic restarts (CosineDecay
+        #                    Restarts), re-injects LR periodically instead
+        #                    of monotonically decaying to near-zero.
         wu_steps = max(warmup_epochs   * self.num_iters, 1)
         ft_steps = max(finetune_epochs * self.num_iters, 1)
         self.lr_warmup   = tf.keras.optimizers.schedules.CosineDecay(
             learning_rate, wu_steps, alpha=0.05)
-        self.lr_finetune = tf.keras.optimizers.schedules.CosineDecay(
-            learning_rate * 0.5, ft_steps, alpha=0.01)
+
+        self.lr_schedule_name = lr_schedule
+        if lr_schedule == 'baseline':
+            self.lr_finetune = tf.keras.optimizers.schedules.CosineDecay(
+                learning_rate * 0.5, ft_steps, alpha=0.01)
+        elif lr_schedule == 'constant_low':
+            self.lr_finetune = learning_rate * 0.5
+        elif lr_schedule == 'cosine_long':
+            self.lr_finetune = tf.keras.optimizers.schedules.CosineDecay(
+                learning_rate * 0.5, ft_steps * 2, alpha=0.05)
+        elif lr_schedule == 'warm_restart':
+            self.lr_finetune = tf.keras.optimizers.schedules.CosineDecayRestarts(
+                learning_rate * 0.5, first_decay_steps=max(ft_steps // 4, 1),
+                t_mul=1.0, m_mul=0.7, alpha=0.02)
+        elif lr_schedule == 'cosine_long_ramped':
+            # Priorité 2 (demande utilisateur) : le switch warmup->finetune
+            # actuel est brutal -- lr_warmup finit a learning_rate*0.05, le
+            # nouvel optimiseur finetune redemarre directement a
+            # learning_rate*0.5 (~10x plus haut, instantanement). Rampe
+            # lineaire sur ramp_epochs au lieu du saut, puis cosine_long
+            # standard pour le reste.
+            lr_warmup_end = learning_rate * 0.05
+            ramp_steps = max(ramp_epochs * self.num_iters, 1)
+            self.lr_finetune = RampedCosineLong(
+                lr_start=lr_warmup_end, lr_peak=learning_rate * 0.5,
+                ramp_steps=ramp_steps, decay_steps=ft_steps * 2, alpha=0.05)
+        else:
+            raise ValueError(f"lr_schedule inconnu: {lr_schedule}")
 
         self.opt = tf.keras.optimizers.Adam(self.lr_warmup, clipnorm=5.0)
 
@@ -575,10 +763,23 @@ class SupervisedTrainer:
 
             # Switch de phase
             if epoch == self.warmup_epochs:
-                self.opt.learning_rate = self.lr_finetune
+                # Rebuild plutôt que réassigner opt.learning_rate : Keras
+                # verrouille learning_rate en lecture-seule une fois
+                # l'optimiseur construit avec un LearningRateSchedule (le
+                # warmup en est un) -- réassigner plante dès que
+                # lr_finetune est un float nu (schedule 'constant_low').
+                # Optimiseur neuf = état Adam (moments) repartant à zéro
+                # pour la phase finetune, cohérent puisque la loss change
+                # de nature (MSE -> sum-rate), pas juste un changement de LR.
+                self.opt = tf.keras.optimizers.Adam(self.lr_finetune, clipnorm=5.0)
                 no_improve = 0
-                print(f'\n🔄 → Finetune  '
-                      f'LR={self.lr_finetune.initial_learning_rate:.1e}\n')
+                if hasattr(self.lr_finetune, 'initial_learning_rate'):
+                    lr0 = self.lr_finetune.initial_learning_rate
+                elif callable(self.lr_finetune):
+                    lr0 = self.lr_finetune(0)   # schedule sans initial_learning_rate (ex: RampedCosineLong)
+                else:
+                    lr0 = self.lr_finetune       # float nu (constant_low)
+                print(f'\n🔄 → Finetune [{self.lr_schedule_name}]  LR={float(lr0):.1e}\n')
 
             losses, gnorms, rates, per_users = [], [], [], []
             t0 = time.time()
@@ -685,9 +886,19 @@ def evaluate_system(system, snr_range, num_batches=50,
 
             sinr    = system.lmmse_sinr(h_eff, no=no, interference_whitening=True)
             rate_sc = tf.math.log(1.0 + sinr) / tf.math.log(2.0)
+            # ÉTAPE 4 fix : axis=[1,2,4] omettait l'axe batch (0) -- le
+            # tf.reduce_sum(...) SANS axis qui suit sommait alors aussi sur
+            # le batch (pas seulement sur les users), gonflant le sum_rate
+            # rapporté d'un facteur ~batch_size (mesuré : Rate WMMSE @15dB
+            # affichait ~4240 au lieu de ~32, ratio 131≈batch_size=128).
+            # Purement un bug d'affichage/reporting (mêmes chiffres pour
+            # toutes les méthodes, comparaisons relatives déjà correctes),
+            # mais faussait les valeurs absolues du tableau Pareto -- fix :
+            # inclure l'axe batch dans le reduce_mean, comme SupervisedTrainer
+            # ._eval_step/_finetune_step (axis=[0,1,2,4]) le font déjà.
             pu      = tf.reduce_mean(rate_sc, axis=[1, 2, 4]).numpy()
             rates_b.append(float(tf.reduce_sum(
-                tf.reduce_mean(rate_sc, axis=[1, 2, 4]))))
+                tf.reduce_mean(rate_sc, axis=[0, 1, 2, 4]))))
             per_b.append(pu.mean(axis=0))
 
         ber_mc = tot_err / max(tot_bits, 1)
@@ -861,10 +1072,20 @@ def main():
     dataset = CachedSionnaDataset(
         dummy,
         dataset_size=DATASET_SIZE,
-        batch_size=512,
-        cache_file=f'/export/tmp/sala/sionna_base_'
+        # CIR-generation chunk size, NOT the training minibatch size (that's
+        # set per-model below). 128, not 512: joint generation multiplies
+        # the CIR intermediate tensor by num_users (K) vs the old
+        # single-user generator, 512 OOM'd on a shared GPU -- see
+        # datasets.py CachedSionnaDataset docstring (§0 fix).
+        batch_size=128,
+        # "_joint" tag (§0 fix): distinct naming from the old pre-fix
+        # mono-user caches (sionna_base_{N}k_{M}x{K}.npz) so a stale cache
+        # can never be silently loaded under the new pipeline -- on top of
+        # the shape check in CachedSionnaDataset._load_cached_channels.
+        cache_file=f'/export/tmp/sala/sionna_joint_'
                    f'{DATASET_SIZE//1000}k_{NUM_TX}x{NUM_RX}.npz',
-        augmentation_multiplier=50,
+        cluster_radius_m=CHOSEN_CONFIG['CLUSTER_RADIUS_M'],
+        indoor_probability=CHOSEN_CONFIG['INDOOR_PROBABILITY'],
         seed=SEED)
 
     # ── 2. Entraînement ──────────────────────────────────────────────────────
@@ -889,9 +1110,24 @@ def main():
             warmup_epochs=cfg['warmup_epochs'],
             finetune_epochs=cfg['finetune_epochs'],
             batch_size=m_cfg.get('batch_size', BATCH_SIZE),
-            learning_rate=cfg['learning_rate'])
+            learning_rate=cfg['learning_rate'],
+            lr_schedule=cfg['lr_schedule'],
+            steps_per_epoch=cfg['steps_per_epoch'])
 
-        trainer.train(print_every=200, patience=8)
+        # ÉTAPE 4 fix : patience=8 (hérité d'avant ÉTAPE 3) coupait
+        # l'entraînement bien avant la fin du budget -- le run complet
+        # observé ne durait que ~44min pour 3 modèles au lieu des ~3h
+        # attendues à 80 époques, et le sum-rate résultant était très
+        # mauvais (~14% WMMSE au lieu des ~86-90% mesurés en recherche
+        # ÉTAPE 3 avec patience=999). Les courbes finetune ÉTAPE 3
+        # montraient des creux bruités de 3-5 époques sans nouveau
+        # meilleur score (cf. SESSION_LOG_20260807.md) -- patience=8 les
+        # interprétait à tort comme un plateau définitif. Monté à 25
+        # (~31% du budget de 80 époques) : tolère ce niveau de bruit
+        # observé tout en gardant un garde-fou contre une vraie divergence.
+        # print_every abaissé à steps_per_epoch (150) : print_every=200
+        # ne se déclenchait jamais en cours d'époque (150 pas/époque).
+        trainer.train(print_every=cfg['steps_per_epoch'], patience=25)
         trained_models[m_cfg['name']] = (system, trainer.ckpt.best_ckpt_path)
 
     # ── 3. Évaluation ────────────────────────────────────────────────────────

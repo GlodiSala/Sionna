@@ -1,0 +1,20 @@
+{
+  "arch": "ta_rb_residual",
+  "variant": "baseline",
+  "D": 128,
+  "L": 4,
+  "evals": {
+    "0.0": 29.72177200317383,
+    "5.0": 32.759386253356936,
+    "10.0": 34.442606925964355,
+    "15.0": 34.97053146362305,
+    "17.5": 35.351270484924314,
+    "20.0": 35.099728965759276
+  },
+  "train_time_min": 10.312448612848918,
+  "best_ckpt": "./weights_massive_gap_diag/ta_rb_residual_baseline/best_20260812_005125",
+  "finetune_epochs": 18,
+  "warmup_epochs": 2,
+  "M": 64,
+  "K": 8
+}

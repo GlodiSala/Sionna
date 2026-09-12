@@ -1,0 +1,109 @@
+{
+  "metric": "sionna",
+  "csi": "pilot20dB",
+  "table": {
+    "snr": [
+      0.0,
+      5.0,
+      10.0,
+      15.0,
+      20.0
+    ],
+    "rzf_sc": [
+      13.932237339019775,
+      18.510348320007324,
+      21.781372451782225,
+      23.586539649963377,
+      24.553772163391113
+    ],
+    "rzf_rb12": [
+      13.497216033935548,
+      18.49212646484375,
+      22.537693595886232,
+      25.38805866241455,
+      27.207368087768554
+    ],
+    "wmmse": [
+      14.081227588653565,
+      18.546633338928224,
+      21.794858932495117,
+      23.59217777252197,
+      24.555694007873534
+    ],
+    "T1": [
+      13.69996690750122,
+      18.991611289978028,
+      23.686316680908202,
+      27.39223155975342,
+      29.812960815429687
+    ],
+    "T2": [
+      14.257444763183594,
+      19.961919212341307,
+      25.038673210144044,
+      29.109237670898438,
+      31.578223419189452
+    ],
+    "T3": [
+      14.22759656906128,
+      19.911507606506348,
+      24.874514198303224,
+      28.664762878417967,
+      30.974757957458497
+    ],
+    "T4": [
+      14.240111255645752,
+      19.92486743927002,
+      24.833650207519533,
+      28.4557222366333,
+      30.673254013061523
+    ],
+    "T6": [
+      14.222662544250488,
+      19.754389381408693,
+      24.408236503601074,
+      27.617636108398436,
+      29.53575019836426
+    ],
+    "T12": [
+      13.685289287567139,
+      18.400915908813477,
+      21.7256067276001,
+      23.53317337036133,
+      24.46263484954834
+    ]
+  },
+  "metadata": {
+    "seed": 42,
+    "seed_fix": "sionna_config.seed = SEED (config.tf_rng.reset_from_seed)",
+    "shared_channel": true,
+    "shared_channel_note": "h_true/no tires UNE fois par batch, reutilises identiques pour RZF-SC/RZF-RB12/WMMSE et les 6 T (CSI parfait) ; h_est derive du meme h_true (bruit pilote 20dB) reutilise pareillement pour CSI imparfait",
+    "pilot_snr_db": 20.0,
+    "pilot_seed": 2026,
+    "script": "/users/sala/Documents/test_projet/Trans/freq/Sionna/.claude/worktrees/agent-aeeee3f387c359d2a/final/tsweep_seedfix_v2.py",
+    "script_sha256_16": "ed948f1532c89ea1",
+    "precoders_w_sha256_16": "aa13d89af012f258",
+    "channel_config_sha256_16": "774acee0716bf280",
+    "checkpoints": {
+      "T1": "./weights/TA_RB_residual_signed_attn_T1_4L_128d/best_20260808_170404",
+      "T2": "./weights/TA_RB_residual_signed_attn_T2_4L_128d/best_20260808_172236",
+      "T3": "./weights/TA_RB_residual_signed_attn_T3_4L_128d/best_20260808_180441",
+      "T4": "./weights/TA_RB_residual_signed_attn_T4_4L_128d/best_20260808_181436",
+      "T6": "./weights/TA_RB_residual_signed_attn_6tok_4L_128d/best_20260808_122946",
+      "T12": "./weights/TA_RB_residual_signed_attn_T12_4L_128d/best_20260808_185507"
+    },
+    "batch_size": 32,
+    "num_batches": 10,
+    "rb_size": 12,
+    "wmmse_iters": 10,
+    "config": {
+      "NUM_TX": 8,
+      "NUM_RX": 4,
+      "CLUSTER_RADIUS_M": 20.0,
+      "INDOOR_PROBABILITY": 0.0,
+      "HALF_ANGLE_DEG": 60.0,
+      "FORCE_LOS": false
+    },
+    "timestamp": "2026-08-20 14:39:11 -0400"
+  }
+}

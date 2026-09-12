@@ -1,0 +1,122 @@
+{
+  "description": "RZF groupe a compression equivalente (rb_size=RB_SIZE//T) sur le meme canal que le run T-sweep 2560 echantillons/point",
+  "table": {
+    "snr": [
+      0.0,
+      5.0,
+      10.0,
+      15.0,
+      20.0
+    ],
+    "T1": [
+      13.192921307860379,
+      18.446027751608632,
+      23.109234661327978,
+      26.823531898183898,
+      29.390390325945766
+    ],
+    "T2": [
+      13.585197144483846,
+      19.310319678142978,
+      24.67131617788374,
+      29.24433556316571,
+      32.614959562460456
+    ],
+    "T3": [
+      13.683430839353534,
+      19.55588975172771,
+      25.165065501344195,
+      30.09164283375343,
+      33.83814445090944
+    ],
+    "T4": [
+      13.7224972675983,
+      19.660153022160546,
+      25.39194792981146,
+      30.512571600497857,
+      34.49441486800802
+    ],
+    "T6": [
+      13.75307437742325,
+      19.74561442406374,
+      25.587012388166848,
+      30.887118347345627,
+      35.07665366267493
+    ],
+    "T12": [
+      13.77330324613549,
+      19.80702752801117,
+      25.74891240950472,
+      31.252955549710094,
+      35.764611551171996
+    ]
+  },
+  "group_size_mapping": {
+    "1": 12,
+    "2": 6,
+    "3": 4,
+    "4": 3,
+    "6": 2,
+    "12": 1
+  },
+  "repro_check_vs_2560run": {
+    "T1_vs_rzf_rb12": {
+      "nouveau": [
+        13.192921307860379,
+        18.446027751608632,
+        23.109234661327978,
+        26.823531898183898,
+        29.390390325945766
+      ],
+      "reference": [
+        13.192921307860379,
+        18.446027751608632,
+        23.109234661327978,
+        26.823531898183898,
+        29.390390325945766
+      ],
+      "max_abs_diff": 0.0
+    },
+    "T12_vs_rzf_sc": {
+      "nouveau": [
+        13.77330324613549,
+        19.80702752801117,
+        25.74891240950472,
+        31.252955549710094,
+        35.764611551171996
+      ],
+      "reference": [
+        14.349826081584604,
+        20.20492841618886,
+        26.468946316511573,
+        33.02369302870787,
+        39.656940082122965
+      ],
+      "max_abs_diff": 3.8923285309509694
+    }
+  },
+  "metadata": {
+    "seed": 42,
+    "seed_fix": "sionna_config.seed = SEED (config.tf_rng.reset_from_seed)",
+    "shared_channel": true,
+    "shared_channel_note": "meme sequence exacte de system.new_topology()/channel_and_no() que tsweep_seedfix_v2_2560samples.py (WMMSE/T1-T12 neuronaux non rejoues, deterministes, ne consomment pas config.tf_rng) -- verifie par repro_check_vs_2560run",
+    "script": "/users/sala/Documents/test_projet/Trans/freq/Sionna/final/diag_rzf_grouped_for_tsweep_2560seedfix.py",
+    "script_sha256_16": "851c25b1f6baeed7",
+    "precoders_w_sha256_16": "aa13d89af012f258",
+    "compare_rb_grouping_sha256_16": "d2381c184c844eac",
+    "channel_config_sha256_16": "774acee0716bf280",
+    "batch_size": 128,
+    "num_batches": 20,
+    "rb_size": 12,
+    "config": {
+      "NUM_TX": 8,
+      "NUM_RX": 4,
+      "CLUSTER_RADIUS_M": 20.0,
+      "INDOOR_PROBABILITY": 0.0,
+      "HALF_ANGLE_DEG": 60.0,
+      "FORCE_LOS": false
+    },
+    "timestamp": "2026-08-20 16:14:21 -0400",
+    "reference_tsweep_run": "results/tsweep_seedfix_perfect_manual_2560_20260820_153545.json"
+  }
+}

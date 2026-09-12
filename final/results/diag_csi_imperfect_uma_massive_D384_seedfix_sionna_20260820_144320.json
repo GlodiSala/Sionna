@@ -1,0 +1,71 @@
+{
+  "metric": "sionna_LMMSEPostEqualizationSINR (_sum_rate)",
+  "table": {
+    "RZF": {
+      "0.0": 59.14298629760742,
+      "5.0": 64.64720916748047,
+      "10.0": 67.26414108276367,
+      "15.0": 68.30950927734375,
+      "20.0": 68.42608133951823
+    },
+    "WMMSE": {
+      "0.0": 59.124192555745445,
+      "5.0": 64.63888804117839,
+      "10.0": 67.2612902323405,
+      "15.0": 68.30861790974934,
+      "20.0": 68.42572911580403
+    },
+    "SingleSC": {
+      "0.0": 56.31333669026693,
+      "5.0": 61.685431798299156,
+      "10.0": 64.24772071838379,
+      "15.0": 65.20395278930664,
+      "20.0": 65.36481348673503
+    },
+    "IntraRB": {
+      "0.0": 56.25571505228678,
+      "5.0": 61.64905103047689,
+      "10.0": 64.25652758280437,
+      "15.0": 65.14439392089844,
+      "20.0": 65.27773793538411
+    },
+    "TA_RB_residual": {
+      "0.0": 58.41306813557943,
+      "5.0": 67.24064763387044,
+      "10.0": 72.77535247802734,
+      "15.0": 74.8794657389323,
+      "20.0": 75.4391695658366
+    }
+  },
+  "metadata": {
+    "seed": 42,
+    "seed_fix": "sionna_config.seed = SEED (config.tf_rng.reset_from_seed)",
+    "shared_channel": true,
+    "regime": "uma_massive_D384",
+    "scenario": "uma",
+    "embed_dim": 384,
+    "tokens_per_rb": 6,
+    "pilot_snr_db": 20.0,
+    "data_snrs": [
+      0.0,
+      5.0,
+      10.0,
+      15.0,
+      20.0
+    ],
+    "num_draws": 6,
+    "batch": 16,
+    "script": "/users/sala/Documents/test_projet/Trans/freq/Sionna/.claude/worktrees/agent-a17991f63e6fe4c57/final/diag_csi_imperfect_massive_2regimes_seedfix.py",
+    "script_sha256_16": "5910dcde265a713a",
+    "precoders_w_sha256_16": "aa13d89af012f258",
+    "channel_config_sha256_16": "774acee0716bf280",
+    "checkpoints": {
+      "SingleSC": "./weights/UMa_MASSIVE_SingleSC_signed_attn_4L_128d_capD384L4/best_20260812_231346",
+      "IntraRB": "./weights/UMa_MASSIVE_IntraRB_signed_attn_4L_128d_capD384L4/best_20260812_233842",
+      "TA_RB_residual": "./weights/UMa_MASSIVE_TA_RB_residual_signed_attn_6tok_4L_128d_capD384L4/best_20260812_235531"
+    },
+    "M": 64,
+    "K": 8,
+    "timestamp": "2026-08-20 14:43:20 -0400"
+  }
+}

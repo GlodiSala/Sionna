@@ -1,0 +1,6 @@
+Method,Precision,Params (K),FLOPs réel (M),Énergie (µJ),vs WMMSE FLOPs,vs WMMSE Énergie,Note
+RZF,FP32,0.0,2.815,0.0111,872.62,417.94,"FP32, référence exacte"
+WMMSE (I=10),FP32,0.0,2456.617,4.6338,1.00,1.00,"FP32, référence exacte"
+SingleSC-signed_attn,INT8,1062.9,810.910,0.1274,3.03,36.38,"INT8, poids vérifiés exacts vs trainable_variables (1,062,936)"
+IntraRB-signed_attn,INT8,1329.7,1016.955,0.1599,2.42,28.99,"INT8, poids vérifiés exacts vs trainable_variables (1,329,692)"
+TA-RB-résiduel-signed_attn (T=6),INT8,1104.7,446.153,0.0705,5.51,65.72,"INT8, poids vérifiés exacts vs trainable_variables (1,104,717)"

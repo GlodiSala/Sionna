@@ -1,8 +1,24 @@
 {
+  "worktree": {
+    "baseRef": "head"
+  },
   "permissions": {
     "allow": [
       "Bash(xargs -I{} ls -la {})",
-      "Bash(sort -k6,7)"
+      "Bash(sort -k6,7)",
+      "Bash(python3 -c \"import sionna; print\\(sionna.__file__\\)\")",
+      "Bash(python3 -)",
+      "Bash(python3 /tmp/wmmse_diag.py)",
+      "Bash(find / -xdev -name \"libstdc++.so.6*\")",
+      "Read(//export/tmp/sala/miniconda/envs/**)",
+      "Bash(git diff *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(xargs ls -la)",
+      "Bash(python3 *)",
+      "Bash(tmux list-sessions *)",
+      "Bash(nvidia-smi --query-compute-apps=pid,used_memory,process_name --format=csv)"
     ]
   }
 }

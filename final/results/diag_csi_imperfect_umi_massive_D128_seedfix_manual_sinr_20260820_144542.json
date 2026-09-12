@@ -1,0 +1,71 @@
+{
+  "metric": "manual_sinr",
+  "table": {
+    "RZF": {
+      "0.0": 60.70332468288769,
+      "5.0": 68.20540969643922,
+      "10.0": 72.55695575532907,
+      "15.0": 74.00131875233556,
+      "20.0": 74.55067561302461
+    },
+    "WMMSE": {
+      "0.0": 60.68443025122138,
+      "5.0": 68.19039554533283,
+      "10.0": 72.55054125327399,
+      "15.0": 73.99869503203125,
+      "20.0": 74.54978221436195
+    },
+    "SingleSC": {
+      "0.0": 44.33736532459621,
+      "5.0": 50.97596292976843,
+      "10.0": 54.94699869397436,
+      "15.0": 56.268509968604945,
+      "20.0": 57.44331664099054
+    },
+    "IntraRB": {
+      "0.0": 44.5399067035958,
+      "5.0": 51.34978681032391,
+      "10.0": 55.26615282617322,
+      "15.0": 57.0448198186925,
+      "20.0": 58.00373792868925
+    },
+    "TA_RB_residual": {
+      "0.0": 45.43224208465177,
+      "5.0": 55.73419593792401,
+      "10.0": 63.12907255740759,
+      "15.0": 67.23922013452469,
+      "20.0": 68.69229293616819
+    }
+  },
+  "metadata": {
+    "seed": 42,
+    "seed_fix": "sionna_config.seed = SEED (config.tf_rng.reset_from_seed)",
+    "shared_channel": true,
+    "regime": "umi_massive_D128",
+    "scenario": "umi",
+    "embed_dim": 128,
+    "tokens_per_rb": 6,
+    "pilot_snr_db": 20.0,
+    "data_snrs": [
+      0.0,
+      5.0,
+      10.0,
+      15.0,
+      20.0
+    ],
+    "num_draws": 6,
+    "batch": 16,
+    "script": "/users/sala/Documents/test_projet/Trans/freq/Sionna/.claude/worktrees/agent-a17991f63e6fe4c57/final/diag_csi_imperfect_massive_2regimes_seedfix.py",
+    "script_sha256_16": "5910dcde265a713a",
+    "precoders_w_sha256_16": "aa13d89af012f258",
+    "channel_config_sha256_16": "774acee0716bf280",
+    "checkpoints": {
+      "SingleSC": "./weights/MASSIVE_TRUE_SingleSC_signed_attn_4L_128d_extbudget/best_20260808_195627",
+      "IntraRB": "./weights/MASSIVE_TRUE_IntraRB_signed_attn_4L_128d_extbudget/best_20260808_204513",
+      "TA_RB_residual": "./weights/MASSIVE_TRUE_TA_RB_residual_signed_attn_6tok_4L_128d_extbudget/best_20260808_221356"
+    },
+    "M": 64,
+    "K": 8,
+    "timestamp": "2026-08-20 14:45:42 -0400"
+  }
+}

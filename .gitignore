@@ -8,3 +8,9 @@ results/*.npy
 **/weights/
 **/logs/
 **/*.npz
+
+# Diagnostic training checkpoints (228M, kept out of the repo like the
+# other archived checkpoint dirs)
+final/weights_massive_gap_diag/
+# Symlink to external scratch storage (/export/tmp)
+final/training_weights_transformer_rb_unsupervised

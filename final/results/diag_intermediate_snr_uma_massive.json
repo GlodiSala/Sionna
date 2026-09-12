@@ -1,0 +1,29 @@
+{
+  "single_sc": {
+    "ckpt": "./weights/UMa_MASSIVE_SingleSC_signed_attn_4L_128d/best_20260808_234158",
+    "evals_intermediate": {
+      "2.5": 53.67379741668701,
+      "7.5": 65.65187301635743,
+      "12.5": 75.88879508972168,
+      "17.5": 82.54274482727051
+    }
+  },
+  "intra_rb": {
+    "ckpt": "./weights/UMa_MASSIVE_IntraRB_signed_attn_4L_128d/best_20260809_005701",
+    "evals_intermediate": {
+      "2.5": 54.697724151611325,
+      "7.5": 67.42341346740723,
+      "12.5": 79.60130767822265,
+      "17.5": 89.72981567382813
+    }
+  },
+  "ta_rb_residual": {
+    "ckpt": "./weights/UMa_MASSIVE_TA_RB_residual_signed_attn_6tok_4L_128d/best_20260809_022421",
+    "evals_intermediate": {
+      "2.5": 51.36092643737793,
+      "7.5": 63.11499938964844,
+      "12.5": 72.73782577514649,
+      "17.5": 78.07931938171387
+    }
+  }
+}

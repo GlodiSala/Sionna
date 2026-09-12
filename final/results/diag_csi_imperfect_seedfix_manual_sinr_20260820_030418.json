@@ -1,0 +1,111 @@
+{
+  "metric": "manual_sinr (precoders_w.py:103-110, evalue sur h_true)",
+  "table": {
+    "snr": [
+      0.0,
+      5.0,
+      10.0,
+      15.0,
+      20.0
+    ],
+    "RZF": [
+      13.319169418213885,
+      18.196274208640762,
+      22.386778108245938,
+      25.165053100932273,
+      26.61413786488102
+    ],
+    "WMMSE": [
+      13.83654025525396,
+      18.369805731258836,
+      22.432794518994168,
+      25.17698219399904,
+      26.61710039929799
+    ],
+    "SC": [
+      12.907862205080482,
+      18.003104782766293,
+      22.185460095212754,
+      24.877377075484127,
+      26.261912143080906
+    ],
+    "IB": [
+      12.903329197884165,
+      18.048080520300736,
+      22.29612944379638,
+      25.019293227324944,
+      26.440732266949755
+    ],
+    "TA-RB": [
+      13.285961400112887,
+      18.84442224765705,
+      23.97055922696451,
+      27.977474528715675,
+      30.448093374393522
+    ]
+  },
+  "metadata": {
+    "seed": 2026,
+    "seed_fix": "sionna_config.seed = SEED (config.tf_rng.reset_from_seed)",
+    "shared_channel": true,
+    "shared_channel_note": "h_true tire une fois par draw (deja le cas dans le script original), reutilise pour les 5 methodes; precodeur calcule sur h_est bruite (pilote 20dB), debit score sur h_true",
+    "script": "/users/sala/Documents/test_projet/Trans/freq/Sionna/.claude/worktrees/agent-a7bedcc41f2447db5/final/diag_csi_imperfect_seedfix.py",
+    "script_sha256_16": "6ebaf1a3cfa634ea",
+    "precoders_w_sha256_16": "aa13d89af012f258",
+    "channel_config_sha256_16": "774acee0716bf280",
+    "checkpoints": {
+      "SingleSC": "./weights/front_a_signed_attn/best_20260808_103631",
+      "IntraRB": "./weights/IntraRB_signed_attn_4L_128d/best_20260808_113308",
+      "TA_RB_residual": "./weights/TA_RB_residual_signed_attn_6tok_4L_128d/best_20260808_122946"
+    },
+    "batch_size": 32,
+    "num_draws": 20,
+    "pilot_snr_db": 20.0,
+    "config": {
+      "NUM_TX": 8,
+      "NUM_RX": 4,
+      "CLUSTER_RADIUS_M": 20.0,
+      "INDOOR_PROBABILITY": 0.0,
+      "HALF_ANGLE_DEG": 60.0,
+      "FORCE_LOS": false
+    },
+    "timestamp": "2026-08-20 03:04:18 -0400"
+  },
+  "raw": {
+    "RZF": {
+      "0.0": 13.319169418213885,
+      "5.0": 18.196274208640762,
+      "10.0": 22.386778108245938,
+      "15.0": 25.165053100932273,
+      "20.0": 26.61413786488102
+    },
+    "WMMSE": {
+      "0.0": 13.83654025525396,
+      "5.0": 18.369805731258836,
+      "10.0": 22.432794518994168,
+      "15.0": 25.17698219399904,
+      "20.0": 26.61710039929799
+    },
+    "SingleSC": {
+      "0.0": 12.907862205080482,
+      "5.0": 18.003104782766293,
+      "10.0": 22.185460095212754,
+      "15.0": 24.877377075484127,
+      "20.0": 26.261912143080906
+    },
+    "IntraRB": {
+      "0.0": 12.903329197884165,
+      "5.0": 18.048080520300736,
+      "10.0": 22.29612944379638,
+      "15.0": 25.019293227324944,
+      "20.0": 26.440732266949755
+    },
+    "TA_RB_residual": {
+      "0.0": 13.285961400112887,
+      "5.0": 18.84442224765705,
+      "10.0": 23.97055922696451,
+      "15.0": 27.977474528715675,
+      "20.0": 30.448093374393522
+    }
+  }
+}

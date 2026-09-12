@@ -1,0 +1,18 @@
+{
+  "arch": "ta_rb_residual",
+  "evals": {
+    "0.0": 46.7634838104248,
+    "5.0": 60.180220222473146,
+    "10.0": 72.23930702209472,
+    "15.0": 81.8603359222412,
+    "17.5": 85.0126708984375,
+    "20.0": 87.5991756439209
+  },
+  "flops_real_M": 2756.542464,
+  "params": 2334989,
+  "train_time_min": 90.916304397583,
+  "best_ckpt": "./weights/MASSIVE_TRUE_TA_RB_residual_signed_attn_6tok_4L_128d_extbudget/best_20260808_221356",
+  "finetune_epochs": 160,
+  "M": 64,
+  "K": 8
+}

@@ -1,0 +1,22 @@
+{
+  "arch": "ta_rb_residual",
+  "variant": "cap_d384l4",
+  "D": 384,
+  "L": 4,
+  "evals": {
+    "0.0": 58.0120756149292,
+    "5.0": 69.97287063598633,
+    "10.0": 79.02576904296875,
+    "15.0": 85.46023597717286,
+    "17.5": 87.59772148132325,
+    "20.0": 88.2368091583252
+  },
+  "flops_real_M": 9452.42112,
+  "params": 10968845,
+  "train_time_min": 99.80020891427993,
+  "best_ckpt": "./weights/UMa_MASSIVE_TA_RB_residual_signed_attn_6tok_4L_128d_capD384L4/best_20260812_235531",
+  "finetune_epochs": 160,
+  "warmup_epochs": 10,
+  "M": 64,
+  "K": 8
+}

@@ -1,0 +1,57 @@
+[
+  {
+    "method": "RZF",
+    "params_k": 0.0,
+    "flops_m": 2.8152320000000004,
+    "energy_uj": 0.011087185160183914,
+    "q_w": 32,
+    "q_a": 32,
+    "note": "FP32, r\u00e9f\u00e9rence exacte",
+    "vs_wmmse_flops": 872.6161680458307,
+    "vs_wmmse_energy": 417.9441794286464
+  },
+  {
+    "method": "WMMSE (I=10)",
+    "params_k": 0.0,
+    "flops_m": 2456.6169600000003,
+    "energy_uj": 4.633824503946531,
+    "q_w": 32,
+    "q_a": 32,
+    "note": "FP32, r\u00e9f\u00e9rence exacte",
+    "vs_wmmse_flops": 1.0,
+    "vs_wmmse_energy": 1.0
+  },
+  {
+    "method": "SingleSC-signed_attn",
+    "params_k": 1062.936,
+    "flops_m": 810.909696,
+    "energy_uj": 0.1273639516761333,
+    "q_w": 8,
+    "q_a": 8,
+    "note": "INT8, poids v\u00e9rifi\u00e9s exacts vs trainable_variables (1,062,936)",
+    "vs_wmmse_flops": 3.0294581161352894,
+    "vs_wmmse_energy": 36.38254343528557
+  },
+  {
+    "method": "IntraRB-signed_attn",
+    "params_k": 1329.692,
+    "flops_m": 1016.95488,
+    "energy_uj": 0.1598574905882881,
+    "q_w": 8,
+    "q_a": 8,
+    "note": "INT8, poids v\u00e9rifi\u00e9s exacts vs trainable_variables (1,329,692)",
+    "vs_wmmse_flops": 2.4156597390043504,
+    "vs_wmmse_energy": 28.987221599023567
+  },
+  {
+    "method": "TA-RB-r\u00e9siduel-signed_attn (T=6)",
+    "params_k": 1104.717,
+    "flops_m": 446.152704,
+    "energy_uj": 0.07050428799067206,
+    "q_w": 8,
+    "q_a": 8,
+    "note": "INT8, poids v\u00e9rifi\u00e9s exacts vs trainable_variables (1,104,717)",
+    "vs_wmmse_flops": 5.506224523520987,
+    "vs_wmmse_energy": 65.7240096454786
+  }
+]

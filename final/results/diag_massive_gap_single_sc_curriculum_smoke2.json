@@ -1,0 +1,20 @@
+{
+  "arch": "single_sc",
+  "variant": "curriculum",
+  "D": 128,
+  "L": 4,
+  "evals": {
+    "0.0": 13.35023250579834,
+    "5.0": 13.431968688964844,
+    "10.0": 13.578684997558593,
+    "15.0": 13.556933546066285,
+    "17.5": 13.591766262054444,
+    "20.0": 13.548471403121948
+  },
+  "train_time_min": 0.8163022478421529,
+  "best_ckpt": "./weights_massive_gap_diag/single_sc_curriculum_smoke2/best_20260811_205950",
+  "finetune_epochs": 1,
+  "warmup_epochs": 1,
+  "M": 64,
+  "K": 8
+}

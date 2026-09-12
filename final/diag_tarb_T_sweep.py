@@ -1,0 +1,118 @@
+"""
+diag_tarb_T_sweep.py — Volet 1 / TA-RB point 3 : re-vérifie le T optimal
+(tokens_per_rb) sur l'architecture NETTOYÉE (fix OFDM + décodeur v4.2
+sans gate) -- le T=3 "Pareto-optimal" d'hier a été établi sur l'ancienne
+V4 bugguée (OOM-prone, gate inutile) ; à revalider ici.
+
+Usage: CUDA_VISIBLE_DEVICES=0 python3 diag_tarb_T_sweep.py
+"""
+import os, sys, time, json, gc
+import numpy as np
+import tensorflow as tf
+tf.get_logger().setLevel('ERROR')
+
+sys.path.insert(0, os.path.dirname(__file__))
+from datasets import CachedSionnaDataset
+from precoders_v2 import TransformerPrecoderClean
+from main_finall import MU_MIMO_System, SNR_MIN_TRAIN, SNR_MAX_TRAIN
+from sionna.phy.utils import ebnodb2no
+
+gpus = tf.config.list_physical_devices('GPU')
+for g in gpus:
+    tf.config.experimental.set_memory_growth(g, True)
+
+NUM_TX, NUM_RX = 8, 4
+N_STEPS = 500
+BATCH = 128   # le fix OFDM permet un batch bien plus grand qu'avant (32)
+EVAL_SNRS = [0.0, 10.0, 20.0]
+T_VALUES = [1, 2, 3, 4, 6]   # doit diviser rb_size=12
+
+_sys = MU_MIMO_System(num_tx=NUM_TX, num_rx=NUM_RX, precoder_type='rzf')
+dataset = CachedSionnaDataset(
+    _sys, dataset_size=5000, batch_size=512,
+    cache_file=f'/export/tmp/sala/sionna_base_5k_{NUM_TX}x{NUM_RX}.npz',
+    augmentation_multiplier=50, seed=42)
+
+all_results = {}
+for T in T_VALUES:
+    print(f'\n{"="*70}\nT = {T} tokens/RB (sc_per_token={12//T})\n{"="*70}')
+    tf.random.set_seed(42)
+    np.random.seed(42)
+
+    precoder = TransformerPrecoderClean(num_tx=NUM_TX, num_rx=NUM_RX, num_ofdm=14, fft_size=96,
+                                         rb_size=12, tokens_per_rb=T, embed_dim=128,
+                                         num_heads=4, num_layers=4)
+    dummy_h = tf.zeros([1, NUM_RX, 1, 1, NUM_TX, 14, 96], dtype=tf.complex64)
+    precoder(dummy_h, no=tf.constant(1e-3), training=False)
+    vars_ = precoder.trainable_variables
+    n_params = sum(int(tf.size(v)) for v in vars_)
+    flops_conv, w_, a_ = precoder.complexity(num_ofdm=14, convention_x_ofdm=True)
+    flops_real, _, _ = precoder.complexity(num_ofdm=14, convention_x_ofdm=False)
+
+    lr = tf.keras.optimizers.schedules.CosineDecay(1e-3, N_STEPS, alpha=0.02)
+    opt = tf.keras.optimizers.Adam(lr, clipnorm=5.0)
+    rate_norm = float(NUM_RX) * 9.0
+
+    @tf.function
+    def train_step(h_freq):
+        snr_db = tf.random.uniform([], SNR_MIN_TRAIN, SNR_MAX_TRAIN)
+        no = ebnodb2no(snr_db, _sys.num_bits_per_symbol, 0.5, _sys.rg)
+        with tf.GradientTape() as tape:
+            g = precoder(h_freq, no=no, training=True, return_real_imag=True)
+            g = tf.complex(g[0], g[1])
+            h_eff = _sys.ch_helper.compute_effective_channel(h_freq, g)
+            sinr = _sys.lmmse_sinr(h_eff, no=no, interference_whitening=True)
+            rate = tf.reduce_sum(tf.reduce_mean(
+                tf.math.log(1.0 + tf.clip_by_value(sinr, 1e-9, 1e4)) / tf.math.log(2.0),
+                axis=[0, 1, 2, 4]))
+            loss = -tf.where(tf.math.is_finite(rate), rate / rate_norm, tf.constant(0.0))
+        grads = tape.gradient(loss, vars_)
+        grads = [tf.where(tf.math.is_finite(g_), g_, tf.zeros_like(g_)) for g_ in grads]
+        gnorm = tf.linalg.global_norm(grads)
+        grads_c, _ = tf.clip_by_global_norm(grads, 5.0)
+        opt.apply_gradients(zip(grads_c, vars_))
+        return loss, gnorm
+
+    @tf.function
+    def eval_step(h_freq, snr_db):
+        no = ebnodb2no(snr_db, _sys.num_bits_per_symbol, 0.5, _sys.rg)
+        g = precoder(h_freq, no=no, training=False)
+        h_eff = _sys.ch_helper.compute_effective_channel(h_freq, g)
+        sinr = _sys.lmmse_sinr(h_eff, no=no, interference_whitening=True)
+        return tf.reduce_sum(tf.reduce_mean(
+            tf.math.log(1.0 + tf.clip_by_value(sinr, 1e-9, 1e4)) / tf.math.log(2.0), axis=[0, 1, 2, 4]))
+
+    gnorms, t0 = [], time.time()
+    for step in range(N_STEPS):
+        hb = dataset.get_batch(BATCH)
+        loss, gnorm = train_step(hb)
+        gnorms.append(float(gnorm))
+
+    eval_res = {}
+    for snr in EVAL_SNRS:
+        rr = [float(eval_step(dataset.get_batch(64), tf.constant(snr, tf.float32))) for _ in range(10)]
+        eval_res[str(snr)] = float(np.mean(rr))
+
+    gnorms = np.array(gnorms)
+    all_results[str(T)] = {
+        'n_params': n_params, 'flops_conv_M': flops_conv/1e6, 'flops_real_M': flops_real/1e6,
+        'gnorm_mean_last40': float(gnorms[-40:].mean()), 'gnorm_max': float(gnorms.max()),
+        'eval_sum_rate': eval_res, 'wall_time_s': time.time() - t0,
+    }
+    print(f'  -> params={n_params:,} FLOPs_reel={flops_real/1e6:.1f}M gn={all_results[str(T)]["gnorm_mean_last40"]:.3f} '
+          f'eval@0/10/20={eval_res["0.0"]:.2f}/{eval_res["10.0"]:.2f}/{eval_res["20.0"]:.2f}')
+
+    del precoder
+    tf.keras.backend.clear_session()
+    gc.collect()
+
+print(f'\n\n=== RÉSUMÉ SWEEP T (architecture nettoyée, batch=128) ===')
+print(f'{"T":>3} {"params":>9} {"FLOPs_reel(M)":>13} {"gn_mean":>8} | eval@0/10/20dB')
+for T, r in all_results.items():
+    ev = r['eval_sum_rate']
+    print(f'{T:>3} {r["n_params"]:>9,} {r["flops_real_M"]:>13.1f} {r["gnorm_mean_last40"]:>8.3f} | '
+          f'{ev["0.0"]:.2f} / {ev["10.0"]:.2f} / {ev["20.0"]:.2f}')
+
+with open('results/diag_tarb_T_sweep.json', 'w') as f:
+    json.dump(all_results, f, indent=2)
+print('\nSauvé -> results/diag_tarb_T_sweep.json')

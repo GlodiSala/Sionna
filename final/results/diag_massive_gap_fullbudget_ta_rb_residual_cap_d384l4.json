@@ -1,0 +1,22 @@
+{
+  "arch": "ta_rb_residual",
+  "variant": "cap_d384l4",
+  "D": 384,
+  "L": 4,
+  "evals": {
+    "0.0": 61.051652336120604,
+    "5.0": 73.69298858642578,
+    "10.0": 84.29906272888184,
+    "15.0": 91.49165496826171,
+    "17.5": 93.49114990234375,
+    "20.0": 95.12380485534668
+  },
+  "flops_real_M": 9452.42112,
+  "params": 10968845,
+  "train_time_min": 85.97595103184382,
+  "best_ckpt": "./weights/MASSIVE_TRUE_TA_RB_residual_signed_attn_6tok_4L_128d_capD384L4/best_20260812_022738",
+  "finetune_epochs": 160,
+  "warmup_epochs": 10,
+  "M": 64,
+  "K": 8
+}

@@ -1,0 +1,110 @@
+{
+  "perfect": {
+    "RZF": {
+      "energy_uj": 0.011087185160183914,
+      "rate15": 33.02369302870787
+    },
+    "WMMSE": {
+      "energy_uj": 4.633824503946531,
+      "rate15": 33.035725515921655
+    },
+    "SC": {
+      "energy_uj": 0.1276086428298988,
+      "rate15": 31.65561580657959,
+      "note": "inchange (hors perimetre)"
+    },
+    "IB": {
+      "energy_uj": 0.16083625520335015,
+      "rate15": 32.283722496032716,
+      "note": "inchange (hors perimetre)"
+    },
+    "TA_RB_by_T": {
+      "1": {
+        "energy_uj": 0.013674653690368332,
+        "rate15": 28.68171303910977,
+        "recommended": false
+      },
+      "2": {
+        "energy_uj": 0.02471432567874171,
+        "rate15": 31.601680981233745,
+        "recommended": false
+      },
+      "3": {
+        "energy_uj": 0.035917125102958775,
+        "rate15": 31.903548470436796,
+        "recommended": false
+      },
+      "4": {
+        "energy_uj": 0.047283051963019525,
+        "rate15": 32.38456938280798,
+        "recommended": true
+      },
+      "6": {
+        "energy_uj": 0.07050428799067206,
+        "rate15": 32.2821661046194,
+        "recommended": false
+      },
+      "12": {
+        "energy_uj": 0.14408305453387804,
+        "rate15": 32.39456651916036,
+        "recommended": false
+      }
+    }
+  },
+  "imperfect_pilot20dB": {
+    "RZF": {
+      "energy_uj": 0.011087185160183914,
+      "rate15": 25.696252826105525
+    },
+    "WMMSE": {
+      "energy_uj": 4.633824503946531,
+      "rate15": 25.707166842433328
+    },
+    "SC": {
+      "energy_uj": 0.1276086428298988,
+      "rate15": 21.423933696746825,
+      "note": "inchange (hors perimetre)"
+    },
+    "IB": {
+      "energy_uj": 0.16083625520335015,
+      "rate15": 21.602712631225586,
+      "note": "inchange (hors perimetre)"
+    },
+    "TA_RB_by_T": {
+      "1": {
+        "energy_uj": 0.013674653690368332,
+        "rate15": 27.993069689509174,
+        "recommended": false
+      },
+      "2": {
+        "energy_uj": 0.02471432567874171,
+        "rate15": 29.947309639248715,
+        "recommended": false
+      },
+      "3": {
+        "energy_uj": 0.035917125102958775,
+        "rate15": 29.706986030233196,
+        "recommended": false
+      },
+      "4": {
+        "energy_uj": 0.047283051963019525,
+        "rate15": 29.582894182711232,
+        "recommended": true
+      },
+      "6": {
+        "energy_uj": 0.07050428799067206,
+        "rate15": 28.96299802712732,
+        "recommended": false
+      },
+      "12": {
+        "energy_uj": 0.14408305453387804,
+        "rate15": 25.65335668204316,
+        "recommended": false
+      }
+    }
+  },
+  "source_tsweep": {
+    "perfect": "tsweep_seedfix_perfect_manual_2560_20260820_153545.json",
+    "pilot20": "tsweep_seedfix_pilot20_manual_2560_20260820_153545.json"
+  }
+}

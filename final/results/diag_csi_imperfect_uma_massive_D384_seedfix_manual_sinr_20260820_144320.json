@@ -1,0 +1,71 @@
+{
+  "metric": "manual_sinr",
+  "table": {
+    "RZF": {
+      "0.0": 62.146945260447715,
+      "5.0": 69.78180762694988,
+      "10.0": 74.00842500975536,
+      "15.0": 75.84407632706939,
+      "20.0": 76.25996832712376
+    },
+    "WMMSE": {
+      "0.0": 62.13801999817262,
+      "5.0": 69.77589110401088,
+      "10.0": 74.00594366384826,
+      "15.0": 75.84322901057628,
+      "20.0": 76.25962591651097
+    },
+    "SingleSC": {
+      "0.0": 59.375261038015346,
+      "5.0": 66.87900517115294,
+      "10.0": 71.01907140289602,
+      "15.0": 72.74437509376052,
+      "20.0": 73.1967486653583
+    },
+    "IntraRB": {
+      "0.0": 59.31400011669283,
+      "5.0": 66.83316656323608,
+      "10.0": 71.02178710630307,
+      "15.0": 72.68280601966534,
+      "20.0": 73.10916289354044
+    },
+    "TA_RB_residual": {
+      "0.0": 60.68649609840921,
+      "5.0": 71.04277895393854,
+      "10.0": 78.41858638273845,
+      "15.0": 81.89260319757862,
+      "20.0": 83.08411875701397
+    }
+  },
+  "metadata": {
+    "seed": 42,
+    "seed_fix": "sionna_config.seed = SEED (config.tf_rng.reset_from_seed)",
+    "shared_channel": true,
+    "regime": "uma_massive_D384",
+    "scenario": "uma",
+    "embed_dim": 384,
+    "tokens_per_rb": 6,
+    "pilot_snr_db": 20.0,
+    "data_snrs": [
+      0.0,
+      5.0,
+      10.0,
+      15.0,
+      20.0
+    ],
+    "num_draws": 6,
+    "batch": 16,
+    "script": "/users/sala/Documents/test_projet/Trans/freq/Sionna/.claude/worktrees/agent-a17991f63e6fe4c57/final/diag_csi_imperfect_massive_2regimes_seedfix.py",
+    "script_sha256_16": "5910dcde265a713a",
+    "precoders_w_sha256_16": "aa13d89af012f258",
+    "channel_config_sha256_16": "774acee0716bf280",
+    "checkpoints": {
+      "SingleSC": "./weights/UMa_MASSIVE_SingleSC_signed_attn_4L_128d_capD384L4/best_20260812_231346",
+      "IntraRB": "./weights/UMa_MASSIVE_IntraRB_signed_attn_4L_128d_capD384L4/best_20260812_233842",
+      "TA_RB_residual": "./weights/UMa_MASSIVE_TA_RB_residual_signed_attn_6tok_4L_128d_capD384L4/best_20260812_235531"
+    },
+    "M": 64,
+    "K": 8,
+    "timestamp": "2026-08-20 14:43:20 -0400"
+  }
+}

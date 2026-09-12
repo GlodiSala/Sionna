@@ -1,0 +1,11 @@
+Config,Method,Params (K),FLOPs réel (M),Énergie réelle (µJ),FLOPs convention x14 (M),Énergie convention (µJ),Note
+"STANDARD (8x4, R=20m)",RZF,0.0,2.815,0.0111,-,-,
+"STANDARD (8x4, R=20m)",WMMSE (I=10),0.0,2456.617,4.6338,-,-,
+"STANDARD (8x4, R=20m)","Single-SC (feat réduites, 3M+1)",1062.9,810.910,0.4393,11352.7,6.1268,
+"STANDARD (8x4, R=20m)","IntraRB nettoyé (feat réduites, 3M+1, RB=12)",1329.7,1016.955,0.5514,14237.4,7.6905,
+"STANDARD (8x4, R=20m)","TA-RB nettoyé T=3 (fix OFDM+déc. v4.2 sans gate, feat mean+var)",1644.2,643.228,0.3497,9005.2,4.8592,
+"MASSIVE (32x8, R=5m)",RZF,0.0,41.757,0.1172,-,-,
+"MASSIVE (32x8, R=5m)",WMMSE (I=10),0.0,198567.506,374.1215,-,-,
+"MASSIVE (32x8, R=5m)","Single-SC (feat réduites, 3M+1)",1078.3,1648.558,0.8914,23079.8,12.4555,
+"MASSIVE (32x8, R=5m)","IntraRB nettoyé (feat réduites, 3M+1, RB=12)",1345.1,2060.648,1.1152,28849.1,15.5825,
+"MASSIVE (32x8, R=5m)","TA-RB nettoyé T=3 (fix OFDM+déc. v4.2 sans gate, feat mean+var)",1967.4,1773.060,0.9585,24822.8,13.3751,

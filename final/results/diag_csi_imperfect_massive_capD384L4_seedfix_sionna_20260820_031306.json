@@ -1,0 +1,69 @@
+{
+  "metric": "sionna",
+  "table": {
+    "RZF": {
+      "0.0": 58.771291732788086,
+      "5.0": 64.21237468719482,
+      "10.0": 66.78850364685059,
+      "15.0": 67.55751991271973,
+      "20.0": 67.82939147949219
+    },
+    "WMMSE": {
+      "0.0": 58.74506092071533,
+      "5.0": 64.20052719116211,
+      "10.0": 66.78397560119629,
+      "15.0": 67.55582618713379,
+      "20.0": 67.82884407043457
+    },
+    "SingleSC": {
+      "0.0": 56.07706356048584,
+      "5.0": 60.98636245727539,
+      "10.0": 63.50554656982422,
+      "15.0": 64.00076866149902,
+      "20.0": 64.26837825775146
+    },
+    "IntraRB": {
+      "0.0": 55.82360076904297,
+      "5.0": 60.65389823913574,
+      "10.0": 63.173930168151855,
+      "15.0": 63.706764221191406,
+      "20.0": 63.94828987121582
+    },
+    "TA_RB_residual": {
+      "0.0": 57.89526653289795,
+      "5.0": 66.6173210144043,
+      "10.0": 72.47767066955566,
+      "15.0": 74.39717864990234,
+      "20.0": 75.26537895202637
+    }
+  },
+  "metadata": {
+    "seed": 42,
+    "seed_fix": "sionna_config.seed = SEED (config.tf_rng.reset_from_seed)",
+    "shared_channel": true,
+    "shared_channel_note": "h_true tire une fois par draw (deja le cas dans le script original), reutilise pour les 5 methodes ET pour le calcul du SINR manuel",
+    "regime": "umi_massive_capD384L4 (M64K8, D=384, L=4, CSI imparfait pilote 20dB)",
+    "script": "/users/sala/Documents/test_projet/Trans/freq/Sionna/.claude/worktrees/agent-af0318c3da0538ee0/final/diag_csi_imperfect_massive_capD384L4_seedfix.py",
+    "script_sha256_16": "8d6b6b93d4cc789e",
+    "precoders_w_sha256_16": "aa13d89af012f258",
+    "channel_config_sha256_16": "774acee0716bf280",
+    "checkpoints": {
+      "SingleSC": "./weights/MASSIVE_TRUE_SingleSC_signed_attn_4L_128d_capD384L4/best_20260812_014548",
+      "IntraRB": "./weights/MASSIVE_TRUE_IntraRB_signed_attn_4L_128d_capD384L4/best_20260812_021303",
+      "TA_RB_residual": "./weights/MASSIVE_TRUE_TA_RB_residual_signed_attn_6tok_4L_128d_capD384L4/best_20260812_022738"
+    },
+    "batch_size": 16,
+    "num_draws": 4,
+    "pilot_snr_db": 20.0,
+    "config": {
+      "NUM_TX": 64,
+      "NUM_RX": 8,
+      "CLUSTER_RADIUS_M": 20.0,
+      "INDOOR_PROBABILITY": 0.0,
+      "HALF_ANGLE_DEG": 60.0,
+      "FORCE_LOS": false
+    },
+    "timestamp": "2026-08-20 03:13:06 -0400",
+    "note": "Version allegee (NUM_DRAWS=4 vs 12 original, 1 seul pilote au lieu de 2) -- confirmation representative, pas table finale"
+  }
+}

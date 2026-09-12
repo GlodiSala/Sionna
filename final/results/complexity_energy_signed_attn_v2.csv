@@ -1,0 +1,9 @@
+Method,Precision,Params (K),FLOPs réel (M),Énergie (µJ),vs WMMSE FLOPs,vs WMMSE Énergie
+RZF,FP32,0.0,2.815,0.0111,872.62,417.94
+WMMSE (I=10),FP32,0.0,2456.617,4.6338,1.00,1.00
+SingleSC-signed_attn,INT8,1062.9,812.483,0.1276,3.02,36.31
+SingleSC-signed_attn,INT16,1062.9,812.483,0.4402,3.02,10.53
+IntraRB-signed_attn,INT8,1329.7,1023.246,0.1608,2.40,28.81
+IntraRB-signed_attn,INT16,1329.7,1023.246,0.5548,2.40,8.35
+TA-RB-résiduel-signed_attn (T=6),INT8,1104.7,446.153,0.0705,5.51,65.72
+TA-RB-résiduel-signed_attn (T=6),INT16,1104.7,446.153,0.2433,5.51,19.04

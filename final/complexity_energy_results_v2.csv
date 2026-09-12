@@ -1,0 +1,5 @@
+Config,Method,Params (K),FLOPs réel (M),Energie réelle (µJ),vs WMMSE FLOPs (réel),vs WMMSE Energie (réel),FLOPs convention x14 (M, hérité),Energie convention (µJ, hérité),Note
+8x4 (Current),RZF,0.0,2.815,0.0111,872.7×,417.5×,-,-,inchangé
+8x4 (Current),WMMSE (I=10),0.0,2456.617,4.6338,1.0×,1.0×,-,-,inchangé (FP32)
+8x4 (Current),TA-RB nettoyé T=3 (fix OFDM+déc. v4.2 sans gate),1647.3,252.2,0.1386,9.74×,33.4×,3530.4,1.9109,"AVANT fix: FLOPs réel = convention x14 = 3530M (>WMMSE, 1.44x PIRE) ; APRÈS fix: 252M (9.7x mieux que WMMSE)"
+8x4 (Current),IntraRB (rb_size=12, features complètes),1331.7,1018.5,0.5523,2.41×,8.39×,14259.4,7.7023,"convention x14 déjà appliquée par choix de design historique (docstring) même si le forward réel n'itère pas sur ofdm -- colonne réelle = /14"

@@ -1,0 +1,29 @@
+{
+  "single_sc": {
+    "ckpt": "./weights/MASSIVE_TRUE_SingleSC_signed_attn_4L_128d_extbudget/best_20260808_195627",
+    "evals_intermediate": {
+      "2.5": 54.32837333679199,
+      "7.5": 65.84425621032715,
+      "12.5": 75.21051826477051,
+      "17.5": 81.46432342529297
+    }
+  },
+  "intra_rb": {
+    "ckpt": "./weights/MASSIVE_TRUE_IntraRB_signed_attn_4L_128d_extbudget/best_20260808_204513",
+    "evals_intermediate": {
+      "2.5": 54.570799827575684,
+      "7.5": 66.42915725708008,
+      "12.5": 76.13296165466309,
+      "17.5": 82.74557495117188
+    }
+  },
+  "ta_rb_residual": {
+    "ckpt": "./weights/MASSIVE_TRUE_TA_RB_residual_signed_attn_6tok_4L_128d_extbudget/best_20260808_221356",
+    "evals_intermediate": {
+      "2.5": 53.539478874206544,
+      "7.5": 66.39068641662598,
+      "12.5": 78.15768318176269,
+      "17.5": 86.82890548706055
+    }
+  }
+}

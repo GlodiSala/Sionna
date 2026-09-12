@@ -1,0 +1,71 @@
+{
+  "metric": "sionna_LMMSEPostEqualizationSINR (_sum_rate)",
+  "table": {
+    "RZF": {
+      "0.0": 57.655948638916016,
+      "5.0": 63.04608472188314,
+      "10.0": 65.80799229939778,
+      "15.0": 66.47277959187825,
+      "20.0": 66.72649256388347
+    },
+    "WMMSE": {
+      "0.0": 57.61754926045736,
+      "5.0": 63.02607091267904,
+      "10.0": 65.80083847045898,
+      "15.0": 66.47007878621419,
+      "20.0": 66.72560119628906
+    },
+    "SingleSC": {
+      "0.0": 41.27946853637695,
+      "5.0": 45.85259564717611,
+      "10.0": 48.26300175984701,
+      "15.0": 48.83985964457194,
+      "20.0": 49.718772888183594
+    },
+    "IntraRB": {
+      "0.0": 41.55906613667806,
+      "5.0": 46.283778508504234,
+      "10.0": 48.611708323160805,
+      "15.0": 49.61178970336914,
+      "20.0": 50.26772371927897
+    },
+    "TA_RB_residual": {
+      "0.0": 43.1018918355306,
+      "5.0": 52.11704762776693,
+      "10.0": 57.69502258300781,
+      "15.0": 60.388563791910805,
+      "20.0": 61.142618815104164
+    }
+  },
+  "metadata": {
+    "seed": 42,
+    "seed_fix": "sionna_config.seed = SEED (config.tf_rng.reset_from_seed)",
+    "shared_channel": true,
+    "regime": "umi_massive_D128",
+    "scenario": "umi",
+    "embed_dim": 128,
+    "tokens_per_rb": 6,
+    "pilot_snr_db": 20.0,
+    "data_snrs": [
+      0.0,
+      5.0,
+      10.0,
+      15.0,
+      20.0
+    ],
+    "num_draws": 6,
+    "batch": 16,
+    "script": "/users/sala/Documents/test_projet/Trans/freq/Sionna/.claude/worktrees/agent-a17991f63e6fe4c57/final/diag_csi_imperfect_massive_2regimes_seedfix.py",
+    "script_sha256_16": "5910dcde265a713a",
+    "precoders_w_sha256_16": "aa13d89af012f258",
+    "channel_config_sha256_16": "774acee0716bf280",
+    "checkpoints": {
+      "SingleSC": "./weights/MASSIVE_TRUE_SingleSC_signed_attn_4L_128d_extbudget/best_20260808_195627",
+      "IntraRB": "./weights/MASSIVE_TRUE_IntraRB_signed_attn_4L_128d_extbudget/best_20260808_204513",
+      "TA_RB_residual": "./weights/MASSIVE_TRUE_TA_RB_residual_signed_attn_6tok_4L_128d_extbudget/best_20260808_221356"
+    },
+    "M": 64,
+    "K": 8,
+    "timestamp": "2026-08-20 14:45:42 -0400"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "arch": "single_sc",
+  "variant": "baseline",
+  "D": 128,
+  "L": 4,
+  "evals": {
+    "0.0": 13.752089357376098,
+    "5.0": 13.80697259902954,
+    "10.0": 13.966339015960694,
+    "15.0": 13.910377693176269,
+    "17.5": 13.922529649734496,
+    "20.0": 13.911195230484008
+  },
+  "train_time_min": 0.8674221793810527,
+  "best_ckpt": "./weights_massive_gap_diag/single_sc_baseline_smoke/best_20260811_205639",
+  "finetune_epochs": 1,
+  "warmup_epochs": 1,
+  "M": 64,
+  "K": 8
+}
