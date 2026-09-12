@@ -419,11 +419,68 @@ Résumé en une ligne : **les précodeurs appris perdent ~7 % sur la moyenne
 (9,12-9,33 vs 9,90 bps/Hz, ce qui recoupe les 93-95 % de RZF du §4.2) et
 ~70 % sur la queue (1,36-1,63 vs 4,93).**
 
+#### Le même mécanisme sous CSI imparfait — le plancher devient la règle
+
+`experiments/mechanism_ber_error_floor.py --csi pilot20` rejoue la mesure
+quand le précodeur ne voit qu'une estimée bruitée du canal (pilote 20 dB) :
+
+**SE moyenne (bps/Hz)**
+
+| | 0 dB | 10 dB | 20 dB |
+|---|---|---|---|
+| RZF | 3.32 | 5.23 | 5.90 |
+| WMMSE | 3.39 | 5.23 | 5.90 |
+| SC | 3.25 | 5.17 | 5.82 |
+| IB | 3.25 | 5.21 | 5.87 |
+| TA-RB | 3.38 | 5.87 | 7.11 |
+
+**SE du pire mot de code (seuil ≈ 1,2)**
+
+| | 0 dB | 10 dB | 20 dB |
+|---|---|---|---|
+| RZF | 0.56 | 0.75 | 0.93 |
+| WMMSE | 0.08 | 0.83 | 0.93 |
+| SC | 0.29 | 0.51 | 0.53 |
+| IB | 0.34 | 0.66 | 0.73 |
+| TA-RB | 0.33 | 0.73 | 0.94 |
+
+**Trames en échec sur 4096**
+
+| | 0 dB | 10 dB | 20 dB |
+|---|---|---|---|
+| RZF | 15 | 2 | 1 |
+| WMMSE | 68 | 2 | 1 |
+| SC | 28 | 4 | 3 |
+| IB | 31 | 2 | 2 |
+| TA-RB | 25 | 2 | 1 |
+
+Trois conséquences, et elles renversent la lecture du paragraphe précédent :
+
+1. **RZF perd son annulation exacte.** Son pire mot de code plafonne à
+   **0,93 bps/Hz** — *sous* le seuil de décodage — au lieu de monter à 4,93,
+   et sa SE moyenne sature à 5,90 au lieu d'atteindre 9,90. RZF n'était exact
+   que parce quon lui donnait le canal exact ; sur une estimée bruitée il
+   inverse une matrice fausse, et l'erreur d'estimation produit exactement le
+   même type de fuite proportionnelle au signal.
+2. **L'écart de queue se referme.** À 20 dB : 1 trame en échec pour RZF,
+   WMMSE et TA-RB, 2 pour IB, 3 pour SC — contre 0 vs 1-2 sous CSI parfait.
+   Le plancher cesse d'être une faiblesse propre aux précodeurs appris.
+3. **TA-RB est le seul à garder une moyenne nettement supérieure** : 7,11
+   contre 5,90 bps/Hz pour RZF à 20 dB (+20,5 %, cohérent avec le +18 à
+   +21 % de débit-somme du §4.3), avec une queue au niveau de celle de RZF
+   (0,94 contre 0,93).
+
+Autrement dit : sous CSI parfait, les précodeurs appris paient leur débit par
+une queue plus lourde. Sous CSI imparfait — le cas réaliste — tout le monde a
+une queue lourde, et TA-RB est le seul à ne pas payer ce défaut en moyenne.
+Figure : `figE_se_mean_vs_tail_csi_imperfect.png`.
+
 #### Quoi présenter, dans quel ordre
 
-1. **`figures/umi_standard/figE_se_mean_vs_tail.png`** — moyenne vs pire mot
-   de code, et le FER qui en découle. C'est la figure explicative : elle rend
-   le reste lisible. À montrer avant la courbe de BER.
+1. **`figures/umi_standard/figE_se_mean_vs_tail.png`** (et sa variante
+   `_csi_imperfect`) — moyenne vs pire mot de code, et le FER qui en découle.
+   C'est la figure explicative : elle rend le reste lisible. À montrer avant la
+   courbe de BER.
 2. **`figD_ber_snr_seedfix.png`** — la courbe BER vs SNR classique, double
    panneau CSI parfait / imparfait.
 3. **Le niveau système** (§4.7) — avec adaptation de MCS, l'utilisateur en

@@ -21,16 +21,21 @@ Données : results/mechanism_ber_error_floor_*.json
 (experiments/mechanism_ber_error_floor.py, mots de code individuels).
 Plusieurs fichiers sont fusionnés pour couvrir toute la plage de SNR.
 
-Usage: python3 figE_se_mean_vs_tail.py   (depuis figures/umi_standard/, CPU)
+Usage: python3 figE_se_mean_vs_tail.py [--csi perfect|pilot20]
+       (depuis figures/umi_standard/, CPU)
 """
-import glob, json
+import argparse, glob, json
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
+_p = argparse.ArgumentParser()
+_p.add_argument('--csi', choices=['perfect', 'pilot20'], default='perfect')
+_a = _p.parse_args()
+
 DATA_DIR = '../../results/'
-CSI = 'perfect'          # 'perfect' ou 'pilot20'
+CSI = _a.csi             # 'perfect' ou 'pilot20'
 THRESHOLD = 1.2          # seuil de decodage QPSK r=1/2 (Shannon 1.0, LDPC 5G ~1.2)
 
 COLORS = {'RZF': '#2a78d6', 'WMMSE': '#eb6834', 'SC': '#1baf7a', 'IB': '#eda100', 'TA-RB': '#e87ba4'}
