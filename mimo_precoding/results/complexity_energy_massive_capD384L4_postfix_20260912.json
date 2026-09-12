@@ -1,0 +1,25 @@
+{
+  "RZF": {
+    "flops_M": 80.292352,
+    "energy_uj": 0.1917138699368977
+  },
+  "WMMSE": {
+    "flops_M": 1249485.76256,
+    "energy_uj": 2189.8533944411647
+  },
+  "SingleSC": {
+    "flops_M": 14722.596864,
+    "params": 9587848,
+    "energy_uj_int8": 2.8233813764449778
+  },
+  "IntraRB": {
+    "flops_M": 18403.098624,
+    "params": 11960972,
+    "energy_uj_int8": 3.530360451200326
+  },
+  "TA_RB_residual": {
+    "flops_M": 9452.42112,
+    "params": 10968845,
+    "energy_uj_int8": 1.8183810373631202
+  }
+}
