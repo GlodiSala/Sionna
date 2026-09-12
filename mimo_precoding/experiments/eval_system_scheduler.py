@@ -251,6 +251,13 @@ if __name__ == '__main__':
 
     out = {name: {str(snr): {k: v for k, v in r.items() if k != 'mcs_history'} for snr, r in res.items()}
            for name, res in all_results.items()}
+    # Metadonnees de tracabilite : sans le nombre de slots on ne peut pas juger
+    # du bruit d'echantillonnage des courbes (a 100 slots elles zigzaguent).
+    out['metadata'] = {'num_slots': num_slots, 'bler_target': 0.1, 'seed': args.seed,
+                       'pilot_snr_db': args.pilot_snr_db, 'snr_range': snr_range,
+                       'methods': methods, 'timestamp': time.strftime('%Y-%m-%d %H:%M:%S %z'),
+                       'harq': 'retour ACK/NACK utilise par l OLLA ; PAS de retransmission',
+                       'throughput': 'bits decodes uniquement (bloc en echec = 0 bit)'}
     out_json = f'results/diag_system_scheduler_eval{csi_tag}.json'
     with open(out_json, 'w') as f:
         json.dump(out, f, indent=2)

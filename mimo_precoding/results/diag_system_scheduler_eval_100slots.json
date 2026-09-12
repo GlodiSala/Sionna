@@ -1,0 +1,372 @@
+{
+  "RZF": {
+    "0.0": {
+      "sum_throughput": 11233.6,
+      "spectral_efficiency": 7.866666666666666,
+      "jain_fairness": 0.9912545311327517,
+      "per_user_throughput": [
+        2699.6,
+        2508.32,
+        3228.32,
+        2797.36
+      ],
+      "mcs_mean": 3.9875
+    },
+    "5.0": {
+      "sum_throughput": 15146.88,
+      "spectral_efficiency": 10.60705882352941,
+      "jain_fairness": 0.9514860342746999,
+      "per_user_throughput": [
+        4509.36,
+        4758.24,
+        2831.6,
+        3047.68
+      ],
+      "mcs_mean": 4.945
+    },
+    "10.0": {
+      "sum_throughput": 20716.56,
+      "spectral_efficiency": 14.507394957983193,
+      "jain_fairness": 0.8675477169814083,
+      "per_user_throughput": [
+        2976.8,
+        5278.96,
+        4072.8,
+        8388.0
+      ],
+      "mcs_mean": 6.045
+    },
+    "15.0": {
+      "sum_throughput": 27144.4,
+      "spectral_efficiency": 19.008683473389354,
+      "jain_fairness": 0.8029542700321215,
+      "per_user_throughput": [
+        7162.88,
+        12135.92,
+        3773.68,
+        4071.92
+      ],
+      "mcs_mean": 6.515
+    },
+    "17.5": {
+      "sum_throughput": 27757.52,
+      "spectral_efficiency": 19.438039215686274,
+      "jain_fairness": 0.6503789655616701,
+      "per_user_throughput": [
+        0.0,
+        8093.68,
+        5511.92,
+        14151.92
+      ],
+      "mcs_mean": 6.5825
+    },
+    "20.0": {
+      "sum_throughput": 27479.759999999995,
+      "spectral_efficiency": 19.2435294117647,
+      "jain_fairness": 0.5557573829244046,
+      "per_user_throughput": [
+        16455.92,
+        3495.92,
+        7527.92,
+        0.0
+      ],
+      "mcs_mean": 6.585
+    }
+  },
+  "WMMSE": {
+    "0.0": {
+      "sum_throughput": 10414.88,
+      "spectral_efficiency": 7.293333333333332,
+      "jain_fairness": 0.9972808648750049,
+      "per_user_throughput": [
+        2468.0,
+        2799.92,
+        2486.32,
+        2660.64
+      ],
+      "mcs_mean": 3.8775
+    },
+    "5.0": {
+      "sum_throughput": 15502.080000000002,
+      "spectral_efficiency": 10.855798319327732,
+      "jain_fairness": 0.9452724376652352,
+      "per_user_throughput": [
+        4610.56,
+        2568.72,
+        4891.76,
+        3431.04
+      ],
+      "mcs_mean": 5.13
+    },
+    "10.0": {
+      "sum_throughput": 20123.12,
+      "spectral_efficiency": 14.091820728291315,
+      "jain_fairness": 0.8678682312510457,
+      "per_user_throughput": [
+        3270.48,
+        8296.16,
+        4787.6,
+        3768.88
+      ],
+      "mcs_mean": 6.0225
+    },
+    "15.0": {
+      "sum_throughput": 26347.519999999997,
+      "spectral_efficiency": 18.450644257703075,
+      "jain_fairness": 0.8533819654704596,
+      "per_user_throughput": [
+        6762.0,
+        4303.36,
+        10983.92,
+        4298.24
+      ],
+      "mcs_mean": 6.4775
+    },
+    "17.5": {
+      "sum_throughput": 26408.96,
+      "spectral_efficiency": 18.493669467787115,
+      "jain_fairness": 0.6819725211395719,
+      "per_user_throughput": [
+        8618.24,
+        4935.92,
+        12526.88,
+        327.92
+      ],
+      "mcs_mean": 6.49
+    },
+    "20.0": {
+      "sum_throughput": 27689.68,
+      "spectral_efficiency": 19.390532212885155,
+      "jain_fairness": 0.5268408233400048,
+      "per_user_throughput": [
+        1191.92,
+        903.92,
+        8669.68,
+        16924.16
+      ],
+      "mcs_mean": 6.51
+    }
+  },
+  "SC": {
+    "0.0": {
+      "sum_throughput": 9234.320000000002,
+      "spectral_efficiency": 6.466610644257703,
+      "jain_fairness": 0.9499760265747264,
+      "per_user_throughput": [
+        3027.12,
+        2116.4,
+        2509.52,
+        1581.28
+      ],
+      "mcs_mean": 3.5675
+    },
+    "5.0": {
+      "sum_throughput": 15105.92,
+      "spectral_efficiency": 10.578375350140055,
+      "jain_fairness": 0.9239158270525508,
+      "per_user_throughput": [
+        2878.64,
+        3125.6,
+        3485.76,
+        5615.92
+      ],
+      "mcs_mean": 4.9875
+    },
+    "10.0": {
+      "sum_throughput": 21205.04,
+      "spectral_efficiency": 14.849467787114847,
+      "jain_fairness": 0.8543854393423068,
+      "per_user_throughput": [
+        4008.56,
+        8999.76,
+        4774.72,
+        3422.0
+      ],
+      "mcs_mean": 6.15
+    },
+    "15.0": {
+      "sum_throughput": 23399.359999999997,
+      "spectral_efficiency": 16.386106442577027,
+      "jain_fairness": 0.8001241883078839,
+      "per_user_throughput": [
+        2919.92,
+        5836.88,
+        10583.12,
+        4059.44
+      ],
+      "mcs_mean": 6.31
+    },
+    "17.5": {
+      "sum_throughput": 23165.920000000002,
+      "spectral_efficiency": 16.22263305322129,
+      "jain_fairness": 0.6949845708526393,
+      "per_user_throughput": [
+        4527.68,
+        1191.92,
+        11800.48,
+        5645.84
+      ],
+      "mcs_mean": 6.28
+    },
+    "20.0": {
+      "sum_throughput": 25226.799999999996,
+      "spectral_efficiency": 17.66582633053221,
+      "jain_fairness": 0.5809312836523608,
+      "per_user_throughput": [
+        5748.72,
+        14990.88,
+        3979.28,
+        507.92
+      ],
+      "mcs_mean": 6.43
+    }
+  },
+  "IB": {
+    "0.0": {
+      "sum_throughput": 9692.88,
+      "spectral_efficiency": 6.787731092436974,
+      "jain_fairness": 0.9987552579857395,
+      "per_user_throughput": [
+        2515.92,
+        2416.64,
+        2288.16,
+        2472.16
+      ],
+      "mcs_mean": 3.705
+    },
+    "5.0": {
+      "sum_throughput": 15138.48,
+      "spectral_efficiency": 10.601176470588234,
+      "jain_fairness": 0.961261085553739,
+      "per_user_throughput": [
+        3258.72,
+        3018.24,
+        4983.04,
+        3878.48
+      ],
+      "mcs_mean": 5.035
+    },
+    "10.0": {
+      "sum_throughput": 21256.64,
+      "spectral_efficiency": 14.885602240896358,
+      "jain_fairness": 0.9170643422907765,
+      "per_user_throughput": [
+        3625.28,
+        5952.32,
+        4050.08,
+        7628.96
+      ],
+      "mcs_mean": 6.0925
+    },
+    "15.0": {
+      "sum_throughput": 23474.08,
+      "spectral_efficiency": 16.43843137254902,
+      "jain_fairness": 0.7515061650250502,
+      "per_user_throughput": [
+        5862.16,
+        11283.04,
+        4061.68,
+        2267.2
+      ],
+      "mcs_mean": 6.3325
+    },
+    "17.5": {
+      "sum_throughput": 24209.28,
+      "spectral_efficiency": 16.953277310924367,
+      "jain_fairness": 0.7717594478958915,
+      "per_user_throughput": [
+        3058.96,
+        6160.16,
+        3609.36,
+        11380.8
+      ],
+      "mcs_mean": 6.35
+    },
+    "20.0": {
+      "sum_throughput": 24021.36,
+      "spectral_efficiency": 16.821680672268904,
+      "jain_fairness": 0.8733174127506894,
+      "per_user_throughput": [
+        6844.48,
+        5594.64,
+        8950.32,
+        2631.92
+      ],
+      "mcs_mean": 6.32
+    }
+  },
+  "TA-RB": {
+    "0.0": {
+      "sum_throughput": 10091.04,
+      "spectral_efficiency": 7.06655462184874,
+      "jain_fairness": 0.9943194798143616,
+      "per_user_throughput": [
+        2601.52,
+        2666.0,
+        2194.88,
+        2628.64
+      ],
+      "mcs_mean": 3.7875
+    },
+    "5.0": {
+      "sum_throughput": 15074.48,
+      "spectral_efficiency": 10.556358543417366,
+      "jain_fairness": 0.9635095802993946,
+      "per_user_throughput": [
+        4033.52,
+        3053.36,
+        4850.64,
+        3136.96
+      ],
+      "mcs_mean": 4.9925
+    },
+    "10.0": {
+      "sum_throughput": 19252.079999999998,
+      "spectral_efficiency": 13.481848739495796,
+      "jain_fairness": 0.8654707024138023,
+      "per_user_throughput": [
+        5309.84,
+        7694.08,
+        3398.72,
+        2849.44
+      ],
+      "mcs_mean": 5.92
+    },
+    "15.0": {
+      "sum_throughput": 25263.2,
+      "spectral_efficiency": 17.691316526610642,
+      "jain_fairness": 0.8639351324629527,
+      "per_user_throughput": [
+        7266.08,
+        4555.52,
+        3495.92,
+        9945.68
+      ],
+      "mcs_mean": 6.3925
+    },
+    "17.5": {
+      "sum_throughput": 24852.32,
+      "spectral_efficiency": 17.403585434173667,
+      "jain_fairness": 0.7406437202698953,
+      "per_user_throughput": [
+        3783.92,
+        8103.92,
+        1767.92,
+        11196.56
+      ],
+      "mcs_mean": 6.36
+    },
+    "20.0": {
+      "sum_throughput": 25592.88,
+      "spectral_efficiency": 17.92218487394958,
+      "jain_fairness": 0.6502186041967032,
+      "per_user_throughput": [
+        4858.88,
+        0.0,
+        12943.68,
+        7790.32
+      ],
+      "mcs_mean": 6.4975
+    }
+  }
+}
