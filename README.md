@@ -468,6 +468,35 @@ Autrement dit : le plancher de BER du §4.6 se paie en un cran de MCS sur une
 poignée d'utilisateurs, pas en perte de débit — et sous CSI imparfait le gain
 de TA-RB survit intégralement au passage au niveau système.
 
+#### Ce que le §4.7 modélise, et ce qu'il ne modélise pas
+
+La boucle est celle de `sionna.sys` : ordonnanceur proportionnel équitable
+(`PFSchedulerSUMIMO`) + adaptation de lien en boucle externe
+(`OuterLoopLinkAdaptation`, cible **BLER = 10 %**) + abstraction PHY
+(`PHYAbstraction`).
+
+- **Le retour HARQ (ACK/NACK) est présent** et c'est lui qui pilote le choix
+  du MCS : `PHYAbstraction` tire l'échec du bloc de transport contre son BLER
+  (`harq_feedback = 0` si échec, `1` sinon), et l'OLLA ajuste le MCS slot
+  après slot pour tenir la cible de 10 %.
+- **Le débit compté est déjà net des erreurs** : `num_decoded_bits =
+  harq_feedback × num_cb × cb_size`, donc un bloc en échec rapporte **zéro
+  bit**. Les chiffres du tableau ci-dessus paient donc déjà le prix des
+  trames perdues — le +31 % de TA-RB sous CSI imparfait est un gain **net**.
+- **Il n'y a pas de retransmission HARQ** : un bloc en échec est perdu, pas
+  renvoyé en redondance incrémentale, et l'ordonnanceur passe au slot
+  suivant. Ces chiffres sont donc une **borne inférieure** : un vrai système
+  récupérerait l'essentiel de ces 10 % à la deuxième transmission. C'est
+  d'ailleurs la raison pour laquelle une cible de 10 % de BLER est le point
+  de fonctionnement normal en LTE/NR — on l'assume parce que le HARQ la
+  rattrape.
+- **Ce n'est pas la même chaîne que le §4.6.** Le §4.6 fait tourner le vrai
+  codec LDPC à MCS fixe (QPSK r=1/2) et compte les bits faux ; le §4.7 utilise
+  l'abstraction PHY (courbes de BLER en fonction du SINR effectif) avec MCS
+  adaptatif. Les deux sont complémentaires : le premier dit *pourquoi* la
+  queue de distribution fait mal, le second dit *combien* elle coûte une fois
+  le lien adapté.
+
 
 ## 5. Refaire les résultats
 
