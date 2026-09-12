@@ -1,0 +1,114 @@
+{
+  "metric": "sionna_LMMSEPostEqualizationSINR (_sum_rate)",
+  "table": {
+    "snr": [
+      0.0,
+      5.0,
+      10.0,
+      15.0,
+      20.0
+    ],
+    "RZF": [
+      12.037642097473144,
+      15.96571593284607,
+      19.086251163482665,
+      21.00104503631592,
+      21.84593439102173
+    ],
+    "WMMSE": [
+      12.815005254745483,
+      16.220729446411134,
+      19.140180778503417,
+      21.01380662918091,
+      21.849456310272217
+    ],
+    "SC": [
+      11.665042400360107,
+      15.797901630401611,
+      18.94035596847534,
+      20.81757402420044,
+      21.64703893661499
+    ],
+    "IB": [
+      11.663808441162109,
+      15.80038080215454,
+      18.947795581817626,
+      20.80289583206177,
+      21.625005054473878
+    ],
+    "TA-RB": [
+      12.176556921005249,
+      17.021486854553224,
+      21.42619571685791,
+      24.675101470947265,
+      26.487490463256837
+    ]
+  },
+  "metadata": {
+    "seed": 2026,
+    "seed_fix": "sionna_config.seed = SEED (config.tf_rng.reset_from_seed)",
+    "shared_channel": true,
+    "shared_channel_note": "h_true tire une fois par draw, reutilise pour les 5 methodes ; precodeur calcule sur h_est (pilote 20dB), debit score sur h_true",
+    "scenario": "UMa",
+    "regime": "uma_standard_M8K4",
+    "tokens_per_rb_ta_rb": 4,
+    "script": "/users/sala/Documents/test_projet/Trans/freq/Sionna/mimo_precoding/experiments/eval_csi_imperfect_uma_standard.py",
+    "script_sha256_16": "059b22655712645d",
+    "precoders_w_sha256_16": "c83b0023eba55107",
+    "channel_config_sha256_16": "cbaeb0664df56ada",
+    "checkpoints": {
+      "SingleSC": "./weights/UMa_SingleSC_signed_attn_4L_128d/best_20260808_231408",
+      "IntraRB": "./weights/UMa_IntraRB_signed_attn_4L_128d/best_20260809_005458",
+      "TA_RB_residual": "./weights/UMa_TA_RB_residual_signed_attn_4tok_4L_128d/best_20260809_001031"
+    },
+    "batch_size": 32,
+    "num_draws": 20,
+    "pilot_snr_db": 20.0,
+    "config": {
+      "NUM_TX": 8,
+      "NUM_RX": 4,
+      "CLUSTER_RADIUS_M": 20.0,
+      "INDOOR_PROBABILITY": 0.0,
+      "HALF_ANGLE_DEG": 60.0,
+      "FORCE_LOS": false
+    },
+    "timestamp": "2026-09-12 07:59:53 -0400"
+  },
+  "raw": {
+    "RZF": {
+      "0.0": 12.037642097473144,
+      "5.0": 15.96571593284607,
+      "10.0": 19.086251163482665,
+      "15.0": 21.00104503631592,
+      "20.0": 21.84593439102173
+    },
+    "WMMSE": {
+      "0.0": 12.815005254745483,
+      "5.0": 16.220729446411134,
+      "10.0": 19.140180778503417,
+      "15.0": 21.01380662918091,
+      "20.0": 21.849456310272217
+    },
+    "SingleSC": {
+      "0.0": 11.665042400360107,
+      "5.0": 15.797901630401611,
+      "10.0": 18.94035596847534,
+      "15.0": 20.81757402420044,
+      "20.0": 21.64703893661499
+    },
+    "IntraRB": {
+      "0.0": 11.663808441162109,
+      "5.0": 15.80038080215454,
+      "10.0": 18.947795581817626,
+      "15.0": 20.80289583206177,
+      "20.0": 21.625005054473878
+    },
+    "TA_RB_residual": {
+      "0.0": 12.176556921005249,
+      "5.0": 17.021486854553224,
+      "10.0": 21.42619571685791,
+      "15.0": 24.675101470947265,
+      "20.0": 26.487490463256837
+    }
+  }
+}

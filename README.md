@@ -195,6 +195,23 @@ représentation fréquentielle compressée (RZF-RB12 passe de 70,4 % à
 | BER, FER, mécanisme du plancher (§4.6) | `experiments/eval_ber_{umi_standard,csi_imperfect}.py`, `experiments/mechanism_ber_error_floor.py` | `diag_ber_umi_standard_seedfix_*.json`, `diag_ber_csi_imperfect_seedfix_*.json`, `mechanism_ber_error_floor_*.json` |
 | `tab:coherence`, Annexe B | `experiments/channel_coherence*.py`, `intermediate_snr_annex_b.py` | `diag_coherence_*.json`, `diag_intermediate_snr_*.json` |
 
+#### Couverture : ce qui existe, régime par régime
+
+| Régime | Débit CSI parfait | Débit CSI imparfait | BER | Niveau système |
+|---|---|---|---|---|
+| **UMi standard** M8K4 | ✔ | ✔ (TA-RB T=6) | ✔ | ✔ |
+| **UMa standard** M8K4 | ✔ | ✔ (TA-RB T=4) | — | — |
+| UMi massive M64K8 D=384 | ✔ | ✔ | — | — |
+| UMi massive M64K8 D=128 | ✔ | ✔ | — | — |
+| UMa massive M64K8 D=384 | ✔ | ✔ | — | — |
+
+Le BER et l'évaluation système n'existent **qu'en UMi standard** : c'est le
+régime de référence (seul avec le balayage T complet), `eval_system_scheduler.py`
+est câblé sur `STANDARD_CONFIG`, et à l'échelle massive le durcissement du canal
+pousse le BER sous la résolution du budget Monte-Carlo utilisé ici. Aucune
+affirmation sur le BER ou le débit livré ne peut donc être étendue aux autres
+régimes.
+
 ### 4.2 Débit somme, CSI parfait
 
 Format des cellules : `Sionna (% RZF-SC) / SINR manuel (% RZF-SC)`, en bps/Hz.
@@ -251,6 +268,16 @@ Format des cellules : `Sionna (% RZF-SC) / SINR manuel (% RZF-SC)`, en bps/Hz.
 | 10 dB | 20.39 (74.4%) | 20.42 (74.6%) | 20.14 (74.8%) | 20.27 (75.0%) | 22.60 (84.3%) |
 | 15 dB | 22.26 (65.7%) | 22.27 (65.7%) | 21.94 (67.1%) | 22.10 (66.8%) | 25.69 (78.2%) |
 | 20 dB | 23.13 (56.9%) | 23.14 (56.9%) | 22.77 (60.0%) | 22.96 (59.2%) | 27.33 (70.7%) |
+
+**UMa standard M8K4 (TA-RB T=4)**
+
+| SNR | RZF | WMMSE | SC | IB | TA-RB |
+|---|---|---|---|---|---|
+| 0 dB | 12.04 (88.5%) | 12.82 (92.1%) | 11.67 (87.9%) | 11.66 (88.1%) | 12.18 (93.2%) |
+| 5 dB | 15.97 (82.5%) | 16.22 (83.5%) | 15.80 (82.5%) | 15.80 (82.8%) | 17.02 (91.2%) |
+| 10 dB | 19.09 (74.4%) | 19.14 (74.6%) | 18.94 (74.9%) | 18.95 (75.3%) | 21.43 (88.2%) |
+| 15 dB | 21.00 (65.4%) | 21.01 (65.5%) | 20.82 (66.6%) | 20.80 (67.2%) | 24.68 (83.3%) |
+| 20 dB | 21.85 (56.5%) | 21.85 (56.5%) | 21.65 (59.0%) | 21.63 (60.1%) | 26.49 (78.3%) |
 
 **UMi massive M64K8 D=384**
 
