@@ -30,8 +30,17 @@ utilisateur), k=1152 bits d'information) :
 Sorties : taux d'erreur trame (FER), bits erronés par trame en échec,
 distribution, et comparaison SINR trames en échec vs trames correctes.
 
+Le mode --csi pilot20 rejoue la même mesure quand le précodeur ne voit qu'une
+estimée bruitée du canal (bruit LS gaussien, pilote 20 dB) alors que la
+propagation et la détection utilisent le vrai canal -- même mécanisme que
+experiments/eval_ber_csi_imperfect.py. Sous CSI imparfait, RZF perd lui aussi
+son annulation exacte (il inverse une estimée fausse), donc la question est de
+savoir si son pire mot de code sature à son tour : si oui, le plancher n'est
+plus une faiblesse propre aux précodeurs appris mais la règle générale dès que
+l'estimation de canal est imparfaite.
+
 Usage: CUDA_VISIBLE_DEVICES=<gpu> python3 experiments/mechanism_ber_error_floor.py
-       [--num_batches N] [--snrs 10 15 20]
+       [--num_batches N] [--snrs 10 15 20] [--csi perfect|pilot20]
 """
 import os, sys, json, time, argparse
 import numpy as np
@@ -43,7 +52,10 @@ os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 for g in tf.config.list_physical_devices('GPU'):
     tf.config.experimental.set_memory_growth(g, True)
 
+from sionna.phy.channel import cir_to_ofdm_channel
+from sionna.phy.utils import ebnodb2no
 from system import MU_MIMO_System, NUM_TX, NUM_RX
+from precoders.classical import rzf_precoder, wmmse_precoder
 from precoders.signed_attention import (SingleSCTransformerPrecoderSignedAttn,
                                     IntraRBTransformerPrecoderSignedAttn,
                                     TransformerPrecoderCleanResidualSignedAttn)
@@ -53,8 +65,10 @@ _p = argparse.ArgumentParser()
 _p.add_argument('--num_batches', type=int, default=4)
 _p.add_argument('--batch_size', type=int, default=256)
 _p.add_argument('--snrs', type=float, nargs='+', default=[10.0, 15.0, 20.0])
+_p.add_argument('--csi', choices=['perfect', 'pilot20'], default='perfect')
 _a = _p.parse_args()
 SEED = 42
+PILOT_SNR_DB = 20.0
 
 NEURAL = {
     'SC':    ('single_sc',      'results/diag_front_a_signed_attn.json',
@@ -88,19 +102,56 @@ def build(name):
     return s
 
 
-def probe(system, snr):
+def gen_h_true(system, batch_size):
+    cir = system.channel_model(batch_size, system.rg.num_ofdm_symbols,
+                                1.0 / system.rg.ofdm_symbol_duration)
+    return system.remove_nulled(cir_to_ofdm_channel(system.frequencies, *cir, normalize=True))
+
+
+def noisy_channel(h, pilot_snr_db, rng):
+    sigma2 = 1.0 / 10.0 ** (pilot_snr_db / 10.0)
+    nre = rng.normal(0, np.sqrt(sigma2 / 2), size=h.shape).astype(np.float32)
+    nim = rng.normal(0, np.sqrt(sigma2 / 2), size=h.shape).astype(np.float32)
+    return h + tf.cast(tf.complex(nre, nim), h.dtype)
+
+
+def precoder_fn_of(system, name):
+    if name == 'RZF':
+        return lambda h, no: rzf_precoder(h, stream_management=system.sm, no=no)
+    if name == 'WMMSE':
+        return lambda h, no: wmmse_precoder(h, no=no, stream_management=system.sm, num_iterations=10)
+    return lambda h, no: system._call_precoder(h, no, training=False)
+
+
+def stats_from(b, b_hat, h_eff, no, system):
+    e = tf.reduce_sum(tf.cast(b != b_hat, tf.int32), axis=-1)          # [B,1,K]
+    sinr = system.lmmse_sinr(h_eff, no=no, interference_whitening=True)
+    rate = tf.math.log(1.0 + sinr) / tf.math.log(2.0)
+    return (tf.reshape(e, [-1]).numpy(),
+            tf.reshape(tf.reduce_mean(rate, axis=[1, 2, 4]), [-1]).numpy())
+
+
+def probe(system, snr, name, rng=None):
     """Retourne (erreurs par mot de code, efficacite spectrale par mot de code)."""
     errs, rates = [], []
     for _ in range(_a.num_batches):
         system.new_topology(_a.batch_size)
-        b, b_hat, _, _, h_eff, no, _, _, _, _ = system(
-            tf.constant(_a.batch_size, tf.int32), tf.constant(float(snr), tf.float32),
-            training=False)
-        e = tf.reduce_sum(tf.cast(b != b_hat, tf.int32), axis=-1)      # [B,1,K]
-        errs.append(tf.reshape(e, [-1]).numpy())
-        sinr = system.lmmse_sinr(h_eff, no=no, interference_whitening=True)
-        rate = tf.math.log(1.0 + sinr) / tf.math.log(2.0)
-        rates.append(tf.reshape(tf.reduce_mean(rate, axis=[1, 2, 4]), [-1]).numpy())
+        if _a.csi == 'perfect':
+            b, b_hat, _, _, h_eff, no, _, _, _, _ = system(
+                tf.constant(_a.batch_size, tf.int32), tf.constant(float(snr), tf.float32),
+                training=False)
+        else:
+            no = ebnodb2no(tf.constant(snr, tf.float32), system.num_bits_per_symbol, 0.5, system.rg)
+            h_true = gen_h_true(system, _a.batch_size)
+            h_est = noisy_channel(h_true, PILOT_SNR_DB, rng)
+            b = system.binary_source([_a.batch_size, 1, system.num_users,
+                                      int(system.rg.num_data_symbols)])
+            c = system.encoder(b)
+            x_rg = system.rg_mapper(system.mapper(c))
+            g = precoder_fn_of(system, name)(h_est, no)
+            b, b_hat, _, _, h_eff, no, *_ = system._forward_from_precoder(b, c, x_rg, h_true, g, no)
+        ee, rr = stats_from(b, b_hat, h_eff, no, system)
+        errs.append(ee); rates.append(rr)
     return np.concatenate(errs), np.concatenate(rates)
 
 
@@ -108,6 +159,7 @@ if __name__ == '__main__':
     K_BITS = None
     out = {'config': {'seed': SEED, 'num_batches': _a.num_batches,
                       'batch_size': _a.batch_size, 'snrs': _a.snrs,
+                      'csi': _a.csi, 'pilot_snr_db': PILOT_SNR_DB if _a.csi == 'pilot20' else None,
                       'modulation': 'QPSK (2 bits/symbole)', 'coderate': 0.5,
                       'note': 'SNR = Eb/N0 (ebnodb2no avec coderate=0.5)'},
            'methods': {}}
@@ -119,7 +171,7 @@ if __name__ == '__main__':
         print(f'\n{"="*78}\n{name}\n{"="*78}', flush=True)
         for snr in _a.snrs:
             reset_seed()
-            e, r = probe(system, snr)
+            e, r = probe(system, snr, name, rng=np.random.RandomState(SEED))
             nfr = e.size
             bad = e > 0
             tot_bits = nfr * K_BITS
@@ -148,7 +200,8 @@ if __name__ == '__main__':
                   f'vs ok {rec["rate_mean_ok"]:5.2f})', flush=True)
         del system
 
-    dst = f"results/mechanism_ber_error_floor_{time.strftime('%Y%m%d_%H%M%S')}.json"
+    dst = (f"results/mechanism_ber_error_floor_{_a.csi}_"
+           f"{time.strftime('%Y%m%d_%H%M%S')}.json")
     out['config']['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S %z')
     with open(dst, 'w') as f:
         json.dump(out, f, indent=2)

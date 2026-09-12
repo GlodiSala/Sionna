@@ -192,7 +192,7 @@ représentation fréquentielle compressée (RZF-RB12 passe de 70,4 % à
 | Mécanisme (plancher d'interférence, plafond SINR, dégradation RZF selon T) | `experiments/mechanism_*.py` | `verify_{interference_floor,sinr_ceiling,rzf_grouping_degradation}_result.json` |
 | Complexité / énergie | `experiments/complexity_energy_{standard,massive_d384,per_T}.py` | `complexity_energy_*.json`, `energy_per_T_*.json` |
 | Niveau système (ordonnanceur, MCS) | `experiments/eval_system_scheduler.py` | `diag_system_scheduler_eval*.json` |
-| BER | `experiments/eval_ber_{umi_standard,csi_imperfect}.py` | `diag_ber_signed_attn_full_range.json`, `diag_ber_csi_imperfect.json` |
+| BER, FER, mécanisme du plancher (§4.6) | `experiments/eval_ber_{umi_standard,csi_imperfect}.py`, `experiments/mechanism_ber_error_floor.py` | `diag_ber_umi_standard_seedfix_*.json`, `diag_ber_csi_imperfect_seedfix_*.json`, `mechanism_ber_error_floor_*.json` |
 | `tab:coherence`, Annexe B | `experiments/channel_coherence*.py`, `intermediate_snr_annex_b.py` | `diag_coherence_*.json`, `diag_intermediate_snr_*.json` |
 
 ### 4.2 Débit somme, CSI parfait
@@ -302,6 +302,173 @@ systématiquement vérifiés par `assert` contre `trainable_variables`.
 
 ---
 
+### 4.6 BER, FER et mécanisme du plancher d'erreur
+
+La chaîne BER est la chaîne Sionna complète (`system.py` : LDPC → précodage →
+canal OFDM → égalisation LMMSE → décodage LDPC), à **modulation et codage
+fixes** : QPSK, LDPC rate 1/2, et l'axe SNR est un **Eb/N0**. Elle transmet
+donc 1 bit/symbole/utilisateur alors que le SINR post-égalisation à 20 dB en
+autorise ~9 : il y a un facteur 9 de marge **sur la moyenne**. Un plancher de
+BER ne peut donc pas venir du bruit — il vient de la **queue** de distribution.
+
+À MCS fixe, une trame est perdue si le SINR de **cet utilisateur-là** passe
+sous le seuil de décodage (~1,2 bps/Hz d'efficacité spectrale ; la limite de
+Shannon pour QPSK r=1/2 est 1,0). Le BER ne mesure donc pas la qualité
+moyenne du précodeur : il compte la fréquence des utilisateurs passés sous le
+seuil. C'est une statistique du **pire**, pas de la **moyenne**.
+
+#### Le mécanisme, mesuré
+
+`experiments/mechanism_ber_error_floor.py` mesure, mot de code par mot de code
+(un mot = un couple réalisation × utilisateur, k = 1152 bits d'information),
+le nombre de bits erronés et l'efficacité spectrale du mot. Sur 4096 mots par
+point, UMi standard, CSI parfait :
+
+**Efficacité spectrale moyenne** — les cinq méthodes sont interchangeables :
+
+| bps/Hz | 0 dB | 5 dB | 10 dB | 15 dB | 20 dB |
+|---|---|---|---|---|---|
+| RZF | 3,55 | 5,03 | 6,62 | 8,25 | 9,90 |
+| WMMSE | 3,60 | 5,04 | 6,62 | 8,25 | 9,90 |
+| SC | 3,47 | 4,96 | 6,47 | 7,90 | 9,12 |
+| IB | 3,47 | 4,97 | 6,51 | 7,99 | 9,33 |
+| TA-RB | 3,46 | 4,94 | 6,45 | 7,91 | 9,21 |
+
+**Efficacité spectrale du pire mot de code** — c'est là que tout se joue
+(seuil ≈ 1,2) :
+
+| bps/Hz | 0 dB | 5 dB | 10 dB | 15 dB | 20 dB | comportement |
+|---|---|---|---|---|---|---|
+| RZF | 0,85 | 1,42 | 2,29 | 3,47 | **4,93** | croît avec le SNR → limité par le bruit |
+| WMMSE | **0,02** | 0,85 | 1,70 | 3,06 | **4,78** | croît, converge vers RZF |
+| SC | 0,50 | 0,85 | 1,15 | 1,32 | **1,36** | **sature** → limité par l'interférence |
+| IB | 0,56 | 0,92 | 1,26 | 1,51 | **1,63** | sature |
+| TA-RB | 0,61 | 0,96 | 1,25 | 1,46 | **1,58** | sature |
+
+**Trames en échec (sur 4096)** — la conséquence directe :
+
+| | 0 dB | 5 dB | 10 dB | 15 dB | 20 dB |
+|---|---|---|---|---|---|
+| RZF | 5 | 0 | 0 | 0 | 0 |
+| WMMSE | **71** | 8 | 2 | 0 | 0 |
+| SC | 29 | 4 | 2 | **1** | **1** |
+| IB | 27 | 6 | 3 | **2** | **2** |
+| TA-RB | 20 | 5 | 0 | 0 | 0 |
+
+Trois faits en découlent, tous mesurés :
+
+1. **Les erreurs sont concentrées, pas étalées.** 100 % des bits erronés
+   tiennent dans au plus 3 mots de code sur 4096, et ces mots ont une
+   efficacité spectrale de 1,3 à 2,0 bps/Hz contre 6,5 à 9,9 pour tous les
+   autres. C'est de l'outage, pas une dégradation systématique — un défaut
+   d'échelle de LLR, de normalisation de puissance ou de pilotes donnerait
+   des erreurs réparties sur tous les mots.
+2. **WMMSE s'effondre à bas SNR, pas à haut SNR.** À 0 dB son pire
+   utilisateur est à 0,02 bps/Hz — éteint — alors que sa moyenne (3,60) est
+   la meilleure du tableau. C'est le comportement attendu d'un algorithme qui
+   maximise la **somme** des débits : servir un utilisateur mal placé coûte
+   plus qu'il ne rapporte, l'optimum de la somme est donc de l'affamer. À MCS
+   fixe ce sacrifié tombe sous le seuil. L'effet disparaît à haut SNR parce
+   que WMMSE tend vers le forçage à zéro quand le bruit tend vers zéro : son
+   pire mot rejoint celui de RZF (4,78 vs 4,93).
+3. **Les précodeurs appris plafonnent à haut SNR.** Leur pire mot de code
+   **sature** (SC : 1,15 → 1,32 → 1,36 de 10 à 20 dB, soit +0,04 entre 15 et
+   20 dB quand RZF gagne +1,46). Ce qui limite ce mot n'est pas le bruit mais
+   l'**interférence résiduelle** : c'est le signal destiné aux autres
+   utilisateurs qui fuit, et cette fuite croît avec la puissance d'émission
+   exactement comme le signal utile — le rapport reste constant, monter le
+   SNR ne sert à rien. RZF annule l'interférence par inversion explicite du
+   canal, sous-porteuse par sous-porteuse ; un réseau en produit une
+   approximation, excellente en moyenne (92-94 % de RZF) mais qui laisse,
+   sur environ 1 utilisateur sur 2 000, une fuite au niveau du seuil.
+
+C'est exactement le mécanisme déjà établi pour le groupement RB dans ce dépôt
+(`experiments/mechanism_interference_floor.py` : le terme `Δ_sc · pinv(H_avg)`
+ne dépend pas du bruit, donc il domine à haut SNR). Les précodeurs appris en
+héritent une version atténuée. Un précodeur appris **sans** plancher serait le
+résultat surprenant, pas l'inverse.
+
+Résumé en une ligne : **les précodeurs appris perdent ~7 % sur la moyenne
+(9,12-9,33 vs 9,90 bps/Hz, ce qui recoupe les 93-95 % de RZF du §4.2) et
+~70 % sur la queue (1,36-1,63 vs 4,93).**
+
+#### Quoi présenter, dans quel ordre
+
+1. **`figures/umi_standard/figE_se_mean_vs_tail.png`** — moyenne vs pire mot
+   de code, et le FER qui en découle. C'est la figure explicative : elle rend
+   le reste lisible. À montrer avant la courbe de BER.
+2. **`figD_ber_snr_seedfix.png`** — la courbe BER vs SNR classique, double
+   panneau CSI parfait / imparfait.
+3. **Le niveau système** (§4.7) — avec adaptation de MCS, l'utilisateur en
+   queue descend d'un cran de modulation et passe ; le plancher se paie en
+   MCS, pas en débit.
+
+Présenter le BER seul, sans (1) et (3), conduit le lecteur à « le BER est
+moins bon donc ça ne marche pas », ce que les données ne disent pas.
+
+#### Réserves
+
+- **Taille d'échantillon.** 4096 mots de code ne résolvent pas un FER de
+  ~10⁻⁴ : TA-RB affiche 0/4096 ci-dessus mais 8,2·10⁻⁵ de BER sur le run à
+  50 tirages. Les runs BER complets (200 tirages = 204 800 mots, résolution
+  4,9·10⁻⁶ en FER) tranchent ; le diagnostic ci-dessus sert au mécanisme, pas
+  au classement fin des trois architectures.
+- **Comptabilité des bits.** Un tirage de 256 porte 256 × 4 utilisateurs ×
+  1152 bits = 1 179 648 bits d'information, donc 50 tirages résolvent
+  1,7·10⁻⁸ en BER. Les « 0 » de RZF sont de vrais zéros sur 59 millions de
+  bits, pas une limite d'échantillonnage.
+- **Échelle massive.** Pas de BER à M=64 : le durcissement du canal pousse le
+  BER sous la résolution du budget Monte-Carlo utilisé ici. BER = échelle
+  standard uniquement.
+- **T différent selon le panneau.** Le BER CSI parfait évalue TA-RB à T=6,
+  le BER CSI imparfait à T=4 (checkpoints différents). `figD_ber_snr.py`
+  annonce T=4 pour les deux, ce qui est faux pour le panneau de gauche ;
+  `figD_ber_snr_seedfix.py` corrige l'étiquette.
+
+### 4.7 Débit livré au niveau système (ordonnanceur + MCS adaptatif)
+
+`experiments/eval_system_scheduler.py` remplace le MCS fixe du §4.6 par une
+adaptation de modulation et de codage par utilisateur, avec ordonnanceur.
+C'est la mesure qui dit ce que le précodeur **livre** réellement, une fois
+que la queue de distribution est absorbée par un cran de MCS plutôt que par
+une trame perdue.
+
+**CSI parfait** — efficacité spectrale livrée (bps/Hz), équité de Jain entre parenthèses
+
+| Méthode | 0.0 dB | 5.0 dB | 10.0 dB | 15.0 dB | 17.5 dB | 20.0 dB |
+|---|---|---|---|---|---|---|
+| RZF | 7.87 (0.99) | 10.61 (0.95) | 14.51 (0.87) | 19.01 (0.80) | 19.44 (0.65) | 19.24 (0.56) |
+| WMMSE | 7.29 (1.00) | 10.86 (0.95) | 14.09 (0.87) | 18.45 (0.85) | 18.49 (0.68) | 19.39 (0.53) |
+| SC | 6.47 (0.95) | 10.58 (0.92) | 14.85 (0.85) | 16.39 (0.80) | 16.22 (0.69) | 17.67 (0.58) |
+| IB | 6.79 (1.00) | 10.60 (0.96) | 14.89 (0.92) | 16.44 (0.75) | 16.95 (0.77) | 16.82 (0.87) |
+| TA-RB | 7.07 (0.99) | 10.56 (0.96) | 13.48 (0.87) | 17.69 (0.86) | 17.40 (0.74) | 17.92 (0.65) |
+
+**CSI imparfait (pilote 20 dB)** — efficacité spectrale livrée (bps/Hz), équité de Jain entre parenthèses
+
+| Méthode | 0.0 dB | 5.0 dB | 10.0 dB | 15.0 dB | 17.5 dB | 20.0 dB |
+|---|---|---|---|---|---|---|
+| RZF | 6.73 (1.00) | 8.64 (0.95) | 11.34 (0.94) | 12.45 (0.89) | 12.52 (0.90) | 12.74 (0.89) |
+| WMMSE | 7.73 (1.00) | 9.20 (0.95) | 11.00 (0.90) | 12.61 (0.87) | 12.25 (0.84) | 12.45 (0.86) |
+| SC | 6.08 (0.96) | 8.88 (0.98) | 10.23 (0.86) | 12.11 (0.92) | 11.59 (0.90) | 12.26 (0.87) |
+| IB | 6.12 (0.97) | 9.39 (0.98) | 11.19 (0.90) | 11.87 (0.80) | 11.66 (0.91) | 12.94 (0.87) |
+| TA-RB | 6.34 (0.97) | 10.56 (0.96) | 12.86 (0.94) | 15.42 (0.88) | 16.46 (0.80) | 13.74 (0.82) |
+
+Deux lectures :
+
+- **Sous CSI parfait**, les précodeurs appris livrent un peu moins que RZF et
+  WMMSE (17,7-17,9 contre 19,2-19,4 bps/Hz à 20 dB) : cohérent avec leur perte
+  de 7 % sur la moyenne et leur queue plus lourde. En revanche ils sont plus
+  **équitables** à haut SNR (Jain 0,87 pour IB contre 0,56 pour RZF à 20 dB).
+- **Sous CSI imparfait**, TA-RB domine nettement sur toute la plage utile :
+  **16,46 contre 12,52 bps/Hz à 17,5 dB, soit +31 %** sur RZF. C'est le même
+  avantage de robustesse que le §4.3 mesure en débit-somme, mais cette fois en
+  débit effectivement livré, MCS et ordonnanceur compris.
+
+Autrement dit : le plancher de BER du §4.6 se paie en un cran de MCS sur une
+poignée d'utilisateurs, pas en perte de débit — et sous CSI imparfait le gain
+de TA-RB survit intégralement au passage au niveau système.
+
+
 ## 5. Refaire les résultats
 
 Les scripts sont indépendants : rien n'oblige à tout relancer. Ordre de
@@ -326,6 +493,12 @@ $PY experiments/eval_csi_imperfect_massive_2regimes.py
 $PY experiments/ablation_tokens_T_rzf_ref.py
 $PY experiments/ablation_tokens_T.py
 
+# BER : courbes complètes (~1 h à 200 tirages) et mécanisme du plancher (~2 min)
+$PY experiments/eval_ber_umi_standard.py  --num_batches 200
+$PY experiments/eval_ber_csi_imperfect.py --num_batches 30
+$PY experiments/mechanism_ber_error_floor.py --csi perfect  --snrs 0 5 10 15 20
+$PY experiments/mechanism_ber_error_floor.py --csi pilot20  --snrs 0 10 20
+
 # Mécanisme, complexité, système — CPU ou GPU léger
 $PY experiments/mechanism_rzf_grouping_degradation.py
 $PY experiments/mechanism_interference_floor.py
@@ -336,6 +509,8 @@ $PY experiments/complexity_energy_per_T.py
 
 # Figures (depuis leur propre dossier)
 cd figures/umi_standard && $PY figA_sumrate_seedfix.py
+cd figures/umi_standard && $PY figE_se_mean_vs_tail.py    # figure explicative du BER
+cd figures/umi_standard && $PY figD_ber_snr_seedfix.py    # courbes BER appariées
 ```
 
 ### 5.2 En réentraînant

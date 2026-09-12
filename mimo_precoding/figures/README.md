@@ -29,7 +29,12 @@ cd figures/umi_standard && $PY figA_sumrate_seedfix.py
 - **Figure C** — débit somme vs SNR par T (TA-RB seulement), `umi_standard/`
   uniquement.
 - **Figure D** — BER vs SNR, double panneau si les données CSI imparfait
-  existent.
+  existent. `figD_ber_snr_seedfix.py` en est la version à tirages appariés,
+  avec le plancher de mesure calculé depuis le budget réel.
+- **Figure E** — efficacité spectrale moyenne vs pire mot de code, et FER
+  (`figE_se_mean_vs_tail.py`, `umi_standard/` uniquement). C'est la figure
+  qui **explique** la figure D : la différence entre méthodes est dans la
+  queue de distribution, pas dans la moyenne. À montrer avant la figure D.
 
 ## Provenance des données — à vérifier avant dépôt final
 
